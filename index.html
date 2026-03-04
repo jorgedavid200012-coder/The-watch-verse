@@ -4,144 +4,168 @@
 <title>WEIRDGEDDON</title>
 
 <style>
+/* ---------- GLOBAL ---------- */
 body{
-margin:0;
-background:black;
-color:red;
-font-family:Impact, sans-serif;
-text-align:center;
-overflow:hidden;
+  margin:0;
+  background:black;
+  color:red;
+  font-family:Impact, sans-serif;
+  text-align:center;
+  overflow:hidden;
 }
 
-/* COUNTDOWN */
+/* ---------- COUNTDOWN ---------- */
 #countdown{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-font-size:90px;
-text-shadow:0 0 20px red;
-animation:shake .2s infinite;
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:90px;
+  text-shadow:0 0 20px red;
+  animation:shake .2s infinite;
 }
 
-/* SHAKE */
+/* ---------- SHAKE ---------- */
 @keyframes shake{
-0%{transform:translate(-50%,-50%) translate(3px,3px);}
-50%{transform:translate(-50%,-50%) translate(-3px,-3px);}
-100%{transform:translate(-50%,-50%) translate(3px,-3px);}
+  0%{transform:translate(-50%,-50%) translate(3px,3px);}
+  50%{transform:translate(-50%,-50%) translate(-3px,-3px);}
+  100%{transform:translate(-50%,-50%) translate(3px,-3px);}
 }
 
-/* FLASH */
+/* ---------- FLASH ---------- */
 #flash{
-position:fixed;
-width:100%;
-height:100%;
-background:white;
-opacity:0;
-pointer-events:none;
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:white;
+  opacity:0;
+  pointer-events:none;
 }
 
-/* CONTENT */
+/* ---------- CONTENT ---------- */
 #content{
-display:none;
-padding:40px;
-animation:fadeIn 3s forwards;
+  display:none;
+  padding:40px;
+  animation:fadeIn 3s forwards;
 }
 
 @keyframes fadeIn{
-from{opacity:0;}
-to{opacity:1;}
+  from{opacity:0;}
+  to{opacity:1;}
 }
 
 button{
-padding:15px 30px;
-margin:20px;
-font-size:20px;
-background:black;
-color:red;
-border:2px solid red;
-cursor:pointer;
+  padding:15px 30px;
+  margin:20px;
+  font-size:20px;
+  background:black;
+  color:red;
+  border:2px solid red;
+  cursor:pointer;
+  transition:0.2s;
 }
 
 button:hover{
-background:red;
-color:black;
+  background:red;
+  color:black;
 }
 
-/* SHOP */
+/* ---------- MINI-SHOP ---------- */
 .shop{
-display:flex;
-justify-content:center;
-gap:30px;
-margin-top:40px;
+  display:flex;
+  justify-content:center;
+  gap:30px;
+  margin-top:40px;
+
+  /* background image for shop rectangle */
+  background-image:
+    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+    url("shopbg.png"); /* <-- upload your image here */
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+
+  /* rectangle style */
+  padding:40px;
+  border-radius:20px;
+
+  /* inner shadow for blending */
+  box-shadow:0 0 40px rgba(0,0,0,0.8) inset;
 }
 
+/* individual items */
 .item{
-background:#3b2b1f;
-color:#f5deb3;
-padding:20px;
-border:3px solid #a67c52;
-cursor:pointer;
-font-family:"Courier New", monospace;
+  background:#3b2b1f;
+  color:#f5deb3;
+  padding:20px;
+  border:3px solid #a67c52;
+  cursor:pointer;
+  font-family:"Courier New", monospace;
+  transition:0.3s;
 }
 
 .item:hover{
-transform:scale(1.1);
+  transform:scale(1.1);
+  box-shadow:0 0 20px red;
 }
 
+/* ---------- OVERLAY ---------- */
 #overlay{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:black;
-color:white;
-display:none;
-align-items:center;
-justify-content:center;
-font-size:40px;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:black;
+  color:white;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:40px;
 }
 </style>
 </head>
 
 <body>
 
+<!-- Countdown and flash -->
 <div id="countdown"></div>
 <div id="flash"></div>
 
+<!-- Main content hidden until countdown ends -->
 <div id="content">
 
-<img src="logo.png" width="500">
-<h1>WEIRDGEDDON</h1>
+  <img src="logo.png" width="500">
+  <h1>WEIRDGEDDON</h1>
 
-<video width="700" controls>
-<source src="trailer.mp4" type="video/mp4">
-</video>
+  <!-- Video: replace trailer.mp4 with your 22-second clip -->
+  <video width="700" controls autoplay>
+    <source src="trailer.mp4" type="video/mp4">
+  </video>
 
-<br>
-<button onclick="location.href='game.html'">PLAY GAME</button>
+  <br>
+  <button onclick="location.href='game.html'">PLAY GAME</button>
 
-<hr style="margin:60px 0; border-color:red;">
+  <hr style="margin:60px 0; border-color:red;">
 
-<img src="shoplogo.png" width="400">
-<h2>La Roaches Things & Stuff</h2>
-<p>"If it survived the apocalypse, we sell it."</p>
+  <img src="shoplogo.png" width="400">
+  <h2>La Roaches Things & Stuff</h2>
+  <p>"If it survived the apocalypse, we sell it."</p>
 
-<div class="shop">
-<div class="item" onclick="rickroll()">🪳 Roach Jerky – $12</div>
-<div class="item" onclick="rickroll()">🔫 Rusted Revolver – $999</div>
-<div class="item" onclick="rickroll()">👁️ Weird Amulet – $666</div>
-</div>
+  <div class="shop">
+    <div class="item" onclick="rickroll()">🪳 Roach Jerky – $12</div>
+    <div class="item" onclick="rickroll()">🔫 Rusted Revolver – $999</div>
+    <div class="item" onclick="rickroll()">👁️ Weird Amulet – $666</div>
+  </div>
 
-<hr style="margin:60px 0; border-color:red;">
+  <hr style="margin:60px 0; border-color:red;">
 
-<h2>Enter Secret Code</h2>
-<input type="text" id="secretInput" placeholder="Type code..." 
-style="padding:10px; font-size:18px; background:black; color:red; border:2px solid red;">
-<button onclick="checkSecret()">UNLOCK</button>
+  <h2>Enter Secret Code</h2>
+  <input type="text" id="secretInput" placeholder="Type code..." 
+  style="padding:10px; font-size:18px; background:black; color:red; border:2px solid red;">
+  <button onclick="checkSecret()">UNLOCK</button>
 
-<div id="secretReveal" style="margin-top:30px;"></div>
+  <div id="secretReveal" style="margin-top:30px;"></div>
 
 </div>
 
@@ -149,149 +173,147 @@ style="padding:10px; font-size:18px; background:black; color:red; border:2px sol
 <audio id="glitchSound" src="glitch.mp3"></audio>
 
 <script>
-
-/* COUNTDOWN DATE */
+/* ---------- COUNTDOWN ---------- */
 let countDate = new Date("Feb 27, 2026 15:00:00 GMT-0600").getTime();
 
 let x=setInterval(function(){
+  let now=new Date().getTime();
+  let distance=countDate-now;
 
-let now=new Date().getTime();
-let distance=countDate-now;
+  let h=Math.floor((distance%(1000*60*60*24))/(1000*60*60));
+  let m=Math.floor((distance%(1000*60*60))/(1000*60));
+  let s=Math.floor((distance%(1000*60))/1000);
 
-let h=Math.floor((distance%(1000*60*60*24))/(1000*60*60));
-let m=Math.floor((distance%(1000*60*60))/(1000*60));
-let s=Math.floor((distance%(1000*60))/1000);
+  document.getElementById("countdown").innerHTML=
+    h+" : "+m+" : "+s;
 
-document.getElementById("countdown").innerHTML=
-h+" : "+m+" : "+s;
-
-if(distance<0){
-clearInterval(x);
-revealEvent();
-}
+  if(distance<0){
+    clearInterval(x);
+    revealEvent();
+  }
 
 },1000);
 
-/* CINEMATIC REVEAL */
+/* ---------- CINEMATIC REVEAL ---------- */
 function revealEvent(){
-document.getElementById("countdown").style.display="none";
+  document.getElementById("countdown").style.display="none";
 
-let flash=document.getElementById("flash");
-flash.style.opacity=1;
-setTimeout(()=>flash.style.opacity=0,300);
+  let flash=document.getElementById("flash");
+  flash.style.opacity=1;
+  setTimeout(()=>flash.style.opacity=0,300);
 
-let sound=document.getElementById("glitchSound");
-if(sound) sound.play();
+  let sound=document.getElementById("glitchSound");
+  if(sound) sound.play();
 
-setTimeout(()=>{
-document.getElementById("content").style.display="block";
-document.body.style.overflow="auto";
-},800);
+  setTimeout(()=>{
+    document.getElementById("content").style.display="block";
+    document.body.style.overflow="auto";
+  },800);
 }
 
-/* SHOP RICKROLL */
+/* ---------- SHOP RICKROLL ---------- */
 function rickroll(){
-document.getElementById("overlay").style.display="flex";
-setTimeout(()=>{
-window.location.href="https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-},2000);
+  document.getElementById("overlay").style.display="flex";
+  setTimeout(()=>{
+    window.location.href="https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+  },2000);
 }
 
-/* SECRET CODES */
+/* ---------- SECRET CODES ---------- */
 function checkSecret(){
-let code=document.getElementById("secretInput").value.toLowerCase();
-let reveal=document.getElementById("secretReveal");
+  let code=document.getElementById("secretInput").value.toLowerCase();
+  let reveal=document.getElementById("secretReveal");
 
-if(code==="animalcrossing"){
-reveal.innerHTML=`
-<h3>Secret World Unlocked</h3>
-<canvas id="secretGame" width="600" height="400" 
-style="border:3px solid red; background:black;"></canvas>
-<p>Use arrow keys to move.</p>
-`;
-startMiniGame();
+  if(code==="animalcrossing"){
+    reveal.innerHTML=`
+      <h3>Secret World Unlocked</h3>
+      <canvas id="secretGame" width="600" height="400" 
+      style="border:3px solid red; background:black;"></canvas>
+      <p>Use arrow keys to move.</p>
+    `;
+    startMiniGame();
+  }
+
+  else if(code==="mario"){
+    reveal.innerHTML="<img src='secret2.png' width='500'>";
+  }
+  else if(code==="blox"){
+    reveal.innerHTML="<img src='secret3.png' width='500'>";
+  }
+  else if(code==="sonic"){
+    reveal.innerHTML="<img src='secret4.png' width='500'>";
+  }
+  else if(code==="kong"){
+    reveal.innerHTML="<img src='secret5.png' width='500'>";
+  }
+
+  else if(code==="weirdgeddon"){
+    breakReality();
+  }
+  else{
+    reveal.innerHTML="<p>Access Denied.</p>";
+  }
 }
 
-else if(code==="mario"){
-reveal.innerHTML="<img src='secret2.png' width='500'>";
-}
-else if(code==="blox"){
-reveal.innerHTML="<img src='secret3.png' width='500'>";
-}
-else if(code==="sonic"){
-reveal.innerHTML="<img src='secret4.png' width='500'>";
-}
-else if(code==="kong"){
-reveal.innerHTML="<img src='secret5.png' width='500'>";
-}
-
-else if(code==="weirdgeddon"){
-breakReality();
-}
-
-else{
-reveal.innerHTML="<p>Access Denied.</p>";
-}
-}
-
-/* MINI GAME */
+/* ---------- MINI GAME ---------- */
 function startMiniGame(){
-let canvas=document.getElementById("secretGame");
-let ctx=canvas.getContext("2d");
+  let canvas=document.getElementById("secretGame");
+  let ctx=canvas.getContext("2d");
 
-let player={x:300,y:200,size:20};
+  let player={x:300,y:200,size:20};
 
-document.addEventListener("keydown",function(e){
-if(e.key==="ArrowUp") player.y-=10;
-if(e.key==="ArrowDown") player.y+=10;
-if(e.key==="ArrowLeft") player.x-=10;
-if(e.key==="ArrowRight") player.x+=10;
-draw();
-});
+  document.addEventListener("keydown",function(e){
+    if(e.key==="ArrowUp") player.y-=10;
+    if(e.key==="ArrowDown") player.y+=10;
+    if(e.key==="ArrowLeft") player.x-=10;
+    if(e.key==="ArrowRight") player.x+=10;
+    draw();
+  });
 
-function draw(){
-ctx.fillStyle="black";
-ctx.fillRect(0,0,600,400);
-ctx.fillStyle="yellow";
-ctx.fillRect(player.x,player.y,player.size,player.size);
-ctx.fillStyle="red";
-ctx.fillText("Hidden Dimension", 200, 30);
+  function draw(){
+    ctx.fillStyle="black";
+    ctx.fillRect(0,0,600,400);
+    ctx.fillStyle="yellow";
+    ctx.fillRect(player.x,player.y,player.size,player.size);
+    ctx.fillStyle="red";
+    ctx.fillText("Hidden Dimension", 200, 30);
+  }
+  draw();
 }
-draw();
-}
 
-/* BREAK REALITY */
+/* ---------- BREAK REALITY ---------- */
 function breakReality(){
-document.body.style.animation="glitch 0.2s infinite";
-document.body.style.background="red";
+  document.body.style.animation="glitch 0.2s infinite";
+  document.body.style.background="red";
 
-let overlay=document.createElement("div");
-overlay.style.position="fixed";
-overlay.style.top="0";
-overlay.style.left="0";
-overlay.style.width="100%";
-overlay.style.height="100%";
-overlay.style.background="black";
-overlay.style.color="white";
-overlay.style.display="flex";
-overlay.style.alignItems="center";
-overlay.style.justifyContent="center";
-overlay.style.fontSize="50px";
-overlay.innerHTML="REALITY CORRUPTED";
-document.body.appendChild(overlay);
+  let overlay=document.createElement("div");
+  overlay.style.position="fixed";
+  overlay.style.top="0";
+  overlay.style.left="0";
+  overlay.style.width="100%";
+  overlay.style.height="100%";
+  overlay.style.background="black";
+  overlay.style.color="white";
+  overlay.style.display="flex";
+  overlay.style.alignItems="center";
+  overlay.style.justifyContent="center";
+  overlay.style.fontSize="50px";
+  overlay.innerHTML="REALITY CORRUPTED";
+  document.body.appendChild(overlay);
 
-setTimeout(()=>overlay.innerHTML="SYSTEM FAILURE",2000);
-setTimeout(()=>overlay.innerHTML="YOU SHOULDN'T HAVE DONE THAT",4000);
+  setTimeout(()=>overlay.innerHTML="SYSTEM FAILURE",2000);
+  setTimeout(()=>overlay.innerHTML="YOU SHOULDN'T HAVE DONE THAT",4000);
 }
 
+/* ---------- GLITCH EFFECT ---------- */
 let style=document.createElement('style');
 style.innerHTML=`
 @keyframes glitch{
-0%{transform:translate(2px,2px);}
-25%{transform:translate(-2px,-2px);}
-50%{transform:translate(2px,-2px);}
-75%{transform:translate(-2px,2px);}
-100%{transform:translate(2px,2px);}
+  0%{transform:translate(2px,2px);}
+  25%{transform:translate(-2px,-2px);}
+  50%{transform:translate(2px,-2px);}
+  75%{transform:translate(-2px,2px);}
+  100%{transform:translate(2px,2px);}
 }`;
 document.head.appendChild(style);
 
