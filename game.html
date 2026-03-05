@@ -52,8 +52,7 @@ button:hover{background:red;color:black;}
 <canvas id="gameCanvas"></canvas>
 
 <script>
-// --------------------
-// Canvas setup
+// --- Canvas setup
 const bgCanvas = document.getElementById("bgCanvas");
 const bgCtx = bgCanvas.getContext("2d");
 const gameCanvas = document.getElementById("gameCanvas");
@@ -66,124 +65,103 @@ function resizeCanvas(){
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// --------------------
-// Background
+// --- Background
 const bgImage = new Image();
 bgImage.src = "8bitbg.png";
 let bgX = 0;
-let autoScroll = true; // true for title/character chooser, false in game
+let autoScroll = true; // slow scroll for title/chooser
 
 function drawBackground(cameraX=0){
   const imgHeight = bgCanvas.height;
   const imgWidth = bgImage.width * (imgHeight/bgImage.height);
   bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
-  let drawX = autoScroll ? bgX : -cameraX*0.5; // slow auto-scroll vs player scroll
+  let drawX = autoScroll ? bgX : -cameraX*0.5;
   for(let i=-imgWidth; i<bgCanvas.width+imgWidth; i+=imgWidth){
     bgCtx.drawImage(bgImage, i+drawX, 0, imgWidth, imgHeight);
   }
-  if(autoScroll) {
-    bgX -= 0.2; // slow automatic movement
+  if(autoScroll){
+    bgX -= 0.2;
     if(bgX <= -imgWidth) bgX = 0;
   }
-  requestAnimationFrame(()=> drawBackground(cameraX));
 }
-bgImage.onload = ()=>{ drawBackground(); };
 
-// --------------------
-// UI logic
+// --- UI
 const startButton = document.getElementById("startButton");
 const titleOverlay = document.getElementById("titleOverlay");
 const charChooser = document.getElementById("charChooser");
 const charactersDiv = document.getElementById("characters");
-
 let selectedChar = null;
 
+// --- Characters
 const charactersData = [
-  {id:'villager', name:'Villager', img:'characters/villager/idle.png'}
+  {id:'villager', name:'Villager', folder:'characters/villager/', sprites:['idle','walk1','walk2','jump','crouch','damaged']},
+  {id:'sonic', name:'Sonic', folder:'characters/sonic/', sprites:['idle','walk1','walk2','jump']},
+  {id:'mario', name:'Mario', folder:'characters/mario/', sprites:['idle','walk1','walk2','jump']},
+  {id:'bill', name:'Bill', folder:'characters/bill_cipher/', sprites:['idle','walk1','walk2','jump']}
 ];
 
+// --- Start button
 startButton.addEventListener("click", ()=>{
-  titleOverlay.style.display = "none";
-  charChooser.style.display = "flex";
+  titleOverlay.style.display="none";
+  charChooser.style.display="flex";
   showCharacterChooser();
 });
 
+// --- Character chooser
 function showCharacterChooser(){
-  charactersDiv.innerHTML = '';
+  charactersDiv.innerHTML='';
   charactersData.forEach(c=>{
     const card = document.createElement('div');
-    card.className = 'charCard';
+    card.className='charCard';
     card.dataset.character = c.id;
-    card.innerHTML = `<img src="${c.img}"><span>${c.name}</span>`;
+    // show first sprite as preview
+    const previewSprite = c.id==='villager'? 'idle' : c.sprites[0];
+    const previewImg = c.id==='villager'? 'idle.png' : c.sprites[0]+'.png';
+    card.innerHTML=`<img src="${c.folder}${previewImg}"><span>${c.name}</span>`;
     charactersDiv.appendChild(card);
     card.addEventListener('click', ()=>{
-      selectedChar = c.id;
+      selectedChar = c;
       charChooser.style.display='none';
-      autoScroll = false; // stop auto-scroll in game
+      autoScroll=false;
       startGame(selectedChar);
     });
   });
 }
 
-// --------------------
-// Game setup
+// --- Game setup
 const floorImg = new Image();
 floorImg.src = "floor.png";
-
-let player;
-let cameraX = 0;
+let player, cameraX=0;
 const gravity = 0.6;
-
-// --------------------
-// Sprites
-const sprites = {
-  villager:{
-    idle:"characters/villager/idle.png",
-    walk1:"characters/villager/walk1.png",
-    walk2:"characters/villager/walk2.png",
-    jump:"characters/villager/jump.png",
-    crouch:"characters/villager/crouch.png",
-    damaged:"characters/villager/damaged.png"
-  }
-};
-const loadedSprites={};
-for(const char in sprites){
-  loadedSprites[char]={};
-  for(const anim in sprites[char]){
-    const img = new Image();
-    img.src = sprites[char][anim];
-    loadedSprites[char][anim]=img;
-  }
-}
-
-// --------------------
-// Controls
 let keys={};
 document.addEventListener("keydown", e=>keys[e.key]=true);
 document.addEventListener("keyup", e=>keys[e.key]=false);
 
-// --------------------
-// Start game
-function startGame(character){
+// --- Load sprites
+const loadedSprites = {};
+charactersData.forEach(c=>{
+  loadedSprites[c.id]={};
+  c.sprites.forEach(anim=>{
+    const img = new Image();
+    // Villager uses full name, others use initial prefix
+    if(c.id==='villager') img.src = c.folder+anim+'.png';
+    else img.src = c.folder[c.id.charAt(0)]+anim+'.png'; // e.g., swalk1.png
+    loadedSprites[c.id][anim] = img;
+  });
+});
+
+// --- Start game
+function startGame(char){
   player = {
-    x:100,
-    y:gameCanvas.height-120,
-    width:50,
-    height:60,
-    velX:0,
-    velY:0,
-    speed:4,
-    jumpPower:-12,
-    jumping:true,
-    character:character,
-    damaged:false,
-    damageTimer:0
+    x:100, y:gameCanvas.height-120,
+    width:50, height:60,
+    velX:0, velY:0, speed:4, jumpPower:-12, jumping:true,
+    character:char.id, damaged:false, damageTimer:0
   };
   gameLoop();
 }
 
-// --------------------
-// Update
+// --- Update
 let walkTimer=0;
 function update(){
   if(keys["ArrowRight"]||keys["d"]) player.velX = player.speed;
@@ -199,7 +177,6 @@ function update(){
   player.x += player.velX;
   player.y += player.velY;
 
-  // Floor collision
   const floorY = gameCanvas.height - 64;
   if(player.y + player.height >= floorY){
     player.y = floorY - player.height;
@@ -207,51 +184,44 @@ function update(){
     player.jumping = false;
   }
 
-  // Damage simulation (H key)
   if(keys["h"] && !player.damaged){
     player.damaged = true;
     player.damageTimer = 30;
   }
   if(player.damaged){
     player.damageTimer--;
-    if(player.damageTimer <= 0) player.damaged=false;
+    if(player.damageTimer<=0) player.damaged=false;
   }
 
-  // Camera follow
   cameraX = player.x - gameCanvas.width/2;
-  if(cameraX < 0) cameraX = 0;
+  if(cameraX<0) cameraX=0;
 }
 
-// --------------------
-// Draw
+// --- Draw
 function draw(){
   ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
 
-  // Draw floor
   const floorY = gameCanvas.height - 64;
   for(let x=0;x<5000;x+=64){
     ctx.drawImage(floorImg, x-cameraX, floorY, 64, 64);
   }
 
-  // Draw player
   const charSprites = loadedSprites[player.character];
   let img;
   if(player.damaged) img = charSprites.damaged;
   else if(player.jumping) img = charSprites.jump;
   else if(keys["ArrowLeft"]||keys["ArrowRight"]||keys["a"]||keys["d"]){
     walkTimer++;
-    img = (walkTimer%20<10) ? charSprites.walk1 : charSprites.walk2;
-  } else if(keys["s"]) img = charSprites.crouch;
+    img = (walkTimer%20<10)?charSprites.walk1:charSprites.walk2;
+  } else img = charSprites.crouch || charSprites.idle;
   else img = charSprites.idle;
 
   ctx.drawImage(img, player.x-cameraX, player.y, player.width, player.height);
 
-  // Update background with cameraX in game
   drawBackground(cameraX);
 }
 
-// --------------------
-// Game loop
+// --- Game loop
 function gameLoop(){
   update();
   draw();
