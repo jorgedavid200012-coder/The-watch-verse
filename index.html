@@ -32,8 +32,9 @@ body{
 #heroSection{
   position:relative;
   width:100%;
-  height:500px;
+  min-height:600px;
   overflow:hidden;
+  display:none; /* hidden until countdown ends */
 }
 
 /* background video */
@@ -46,32 +47,33 @@ body{
   z-index:0;
 }
 
-/* logo floating + wobble */
+/* logo floating + wobble + glow */
 #logo{
   position:relative;
   z-index:1;
   width:500px;
   animation:floatRotate 4s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(255,0,0,0.6);
 }
 
 @keyframes floatRotate{
-  0%   { transform: translateY(0px) rotate(0deg) scale(1); }
-  25%  { transform: translateY(-15px) rotate(-2deg) scale(1.02); }
-  50%  { transform: translateY(-25px) rotate(2deg) scale(1); }
-  75%  { transform: translateY(-15px) rotate(-1deg) scale(1.01); }
-  100% { transform: translateY(0px) rotate(0deg) scale(1); }
+  0%   { transform: translateY(0px) rotate(0deg) scale(1); box-shadow:0 0 10px rgba(255,0,0,0.5);}
+  25%  { transform: translateY(-15px) rotate(-2deg) scale(1.02); box-shadow:0 0 20px rgba(255,0,0,0.6);}
+  50%  { transform: translateY(-25px) rotate(2deg) scale(1); box-shadow:0 0 15px rgba(255,0,0,0.5);}
+  75%  { transform: translateY(-15px) rotate(-1deg) scale(1.01); box-shadow:0 0 18px rgba(255,0,0,0.55);}
+  100% { transform: translateY(0px) rotate(0deg) scale(1); box-shadow:0 0 10px rgba(255,0,0,0.5);}
 }
 
 /* ---------- COUNTDOWN ---------- */
 #countdown{
-  position:absolute;
+  position:fixed;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
   font-size:120px;
   text-shadow:0 0 30px red;
   animation:shake .2s infinite;
-  z-index:2;
+  z-index:10000;
 }
 
 @keyframes shake{
@@ -88,6 +90,7 @@ body{
   background:white;
   opacity:0;
   pointer-events:none;
+  z-index:9999;
 }
 
 /* CONTENT */
@@ -154,6 +157,7 @@ button:hover{background:red; color:black;}
   align-items:center;
   justify-content:center;
   font-size:40px;
+  z-index:9999;
 }
 </style>
 </head>
@@ -173,19 +177,17 @@ button:hover{background:red; color:black;}
     <source src="backgroundVideo.mp4" type="video/mp4">
   </video>
   <img id="logo" src="logo.png">
+  
+  <!-- Trailer also inside hero to cover it -->
+  <div id="trailerContainer" style="position:relative; z-index:1; margin-top:20px;">
+    <video width="700" controls>
+      <source src="trailer.mp4" type="video/mp4">
+    </video>
+  </div>
 </div>
 
 <!-- Main content -->
 <div id="content">
-
-  <h1>WEIRDGEDDON</h1>
-
-  <video width="700" controls>
-    <source src="trailer.mp4" type="video/mp4">
-  </video>
-
-  <br>
-  <button onclick="location.href='game.html'">PLAY GAME</button>
 
   <hr style="margin:60px 0; border-color:red;">
 
@@ -256,6 +258,7 @@ function revealContent(){
   }
 
   setTimeout(()=>{
+    document.getElementById("heroSection").style.display = "block";
     document.getElementById("content").style.display = "block";
     document.body.style.overflow = "auto";
   },800);
@@ -307,6 +310,7 @@ function checkSecret(){
   else if(code==="blox"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret3.png' width='500'>";}
   else if(code==="sonic"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret4.png' width='500'>";}
   else if(code==="kong"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret5.png' width='500'>";}
+  else if(code==="crossing"){window.location.href="game.html";}
   else if(code==="weirdgeddon"){breakReality();}
   else{reveal.innerHTML="<p>Access Denied.</p>";}
 }
