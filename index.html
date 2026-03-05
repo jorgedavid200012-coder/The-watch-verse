@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>WEIRDGEDDON</title>
+<title>WEIRDMAGEDDON</title>
 
 <style>
 /* ---------- GLOBAL ---------- */
@@ -32,12 +32,12 @@ body{
 #heroSection{
   position:relative;
   width:100%;
-  min-height:600px;
+  min-height:100vh;
   overflow:hidden;
   display:none; /* hidden until countdown ends */
 }
 
-/* background video */
+/* background video filling entire hero + content */
 #heroBg{
   position:absolute;
   top:0; left:0;
@@ -53,6 +53,7 @@ body{
   z-index:1;
   width:500px;
   animation:floatRotate 4s ease-in-out infinite;
+  cursor:pointer;
 }
 
 @keyframes floatRotate{
@@ -94,9 +95,11 @@ body{
 
 /* CONTENT */
 #content{
-  display:none;
+  position:relative;
+  z-index:1;
   padding:40px;
   animation:fadeIn 3s forwards;
+  color:red;
 }
 @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
 
@@ -114,17 +117,13 @@ button:hover{background:red; color:black;}
 
 /* SHOP */
 .shop-container {
-  background-image:
-    linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-    url("shopbg.png");
-  background-size:cover;
-  background-position:center;
-  background-repeat:no-repeat;
+  background:rgba(0,0,0,0.6);
   padding:40px;
   border-radius:20px;
-  box-shadow:0 0 40px rgba(0,0,0,0.8) inset;
   margin-top:40px;
   text-align:center;
+  position:relative;
+  z-index:1; /* above background video */
 }
 .shop {
   display:flex;
@@ -158,6 +157,14 @@ button:hover{background:red; color:black;}
   font-size:40px;
   z-index:9999;
 }
+
+/* ERROR VIDEO FULLSCREEN */
+#errorVideo{
+  position:fixed;
+  top:0; left:0; width:100%; height:100%;
+  object-fit:cover;
+  z-index:100000;
+}
 </style>
 </head>
 
@@ -175,41 +182,41 @@ button:hover{background:red; color:black;}
   <video id="heroBg" autoplay muted loop>
     <source src="backgroundVideo.mp4" type="video/mp4">
   </video>
-  <img id="logo" src="logo.png">
-  
-  <!-- Trailer also inside hero to cover it -->
-  <div id="trailerContainer" style="position:relative; z-index:1; margin-top:20px;">
-    <video width="700" controls>
-      <source src="trailer.mp4" type="video/mp4">
-    </video>
-  </div>
-</div>
 
-<!-- Main content -->
-<div id="content">
+  <div id="content">
+    <h1>WEIRDMAGEDDON</h1>
+    <img id="logo" src="logo.png">
 
-  <hr style="margin:60px 0; border-color:red;">
-
-  <div class="shop-container">
-    <img src="shoplogo.png" width="400">
-    <h2>La Roaches Things & Stuff</h2>
-    <p>"If it survived the apocalypse, we sell it."</p>
-
-    <div class="shop">
-      <div class="item" onclick="playBuySound(); rickroll()">🪳 Roach Jerky – $12</div>
-      <div class="item" onclick="playBuySound(); rickroll()">🔫 Rusted Revolver – $999</div>
-      <div class="item" onclick="playBuySound(); rickroll()">👁️ Weird Amulet – $666</div>
+    <!-- Trailer -->
+    <div id="trailerContainer" style="margin-top:20px;">
+      <video width="700" controls>
+        <source src="trailer.mp4" type="video/mp4">
+      </video>
     </div>
+
+    <hr style="margin:60px 0; border-color:red;">
+
+    <div class="shop-container">
+      <img src="shoplogo.png" width="400">
+      <h2>La Roaches Things & Stuff</h2>
+      <p>"If it survived the apocalypse, we sell it."</p>
+
+      <div class="shop">
+        <div class="item" onclick="playBuySound(); rickroll()">🪳 Roach Jerky – $12</div>
+        <div class="item" onclick="playBuySound(); rickroll()">🔫 Rusted Revolver – $999</div>
+        <div class="item" onclick="playBuySound(); rickroll()">👁️ Weird Amulet – $666</div>
+      </div>
+    </div>
+
+    <hr style="margin:60px 0; border-color:red;">
+
+    <h2>Enter Secret Code</h2>
+    <input type="text" id="secretInput" placeholder="Type code..." 
+    style="padding:10px; font-size:18px; background:black; color:red; border:2px solid red;">
+    <button onclick="checkSecret()">UNLOCK</button>
+
+    <div id="secretReveal" style="margin-top:30px;"></div>
   </div>
-
-  <hr style="margin:60px 0; border-color:red;">
-
-  <h2>Enter Secret Code</h2>
-  <input type="text" id="secretInput" placeholder="Type code..." 
-  style="padding:10px; font-size:18px; background:black; color:red; border:2px solid red;">
-  <button onclick="checkSecret()">UNLOCK</button>
-
-  <div id="secretReveal" style="margin-top:30px;"></div>
 </div>
 
 <div id="overlay">Processing Transaction...</div>
@@ -219,6 +226,9 @@ button:hover{background:red; color:black;}
 <audio id="bgMusic" src="background.mp3" loop></audio>
 <audio id="buySound" src="cash.mp3"></audio>
 <audio id="secretSound" src="secret.mp3"></audio>
+
+<!-- ERROR VIDEO (hidden initially) -->
+<video id="errorVideo" src="error.mp4" style="display:none;"></video>
 
 <script>
 const startOverlay = document.getElementById('startOverlay');
@@ -253,12 +263,11 @@ function revealContent(){
 
   const bgMusic = document.getElementById("bgMusic");
   if(bgMusic){
-    fadeInMusic(bgMusic, 10000, 0.15); // reduced volume to half
+    fadeInMusic(bgMusic, 10000, 0.15);
   }
 
   setTimeout(()=>{
     document.getElementById("heroSection").style.display = "block";
-    document.getElementById("content").style.display = "block";
     document.body.style.overflow = "auto";
   },800);
 }
@@ -290,14 +299,35 @@ function rickroll(){
   },2000);
 }
 
-function checkSecret(){
-  let code=document.getElementById("secretInput").value.toLowerCase();
-  let reveal=document.getElementById("secretReveal");
+// LOGO EASTER EGG
+let logoClickCount = 0;
+const logo = document.getElementById("logo");
+logo.addEventListener('click', () => {
+  logoClickCount++;
+  if(logoClickCount === 5){
+    window.location.href = "https://youtu.be/-RbkipgjqlU?si=fYy6WQl1PBP0ZwqY";
+  } else if(logoClickCount === 10){
+    showErrorVideo();
+  }
+});
 
-  if(code==="animalcrossing"){
+function showErrorVideo(){
+  const errVideo = document.getElementById("errorVideo");
+  errVideo.style.display="block";
+  errVideo.play();
+  errVideo.onended = () => { location.reload(); }
+}
+
+// SECRET CODES
+function checkSecret(){
+  let code = document.getElementById("secretInput").value.toLowerCase();
+  let reveal = document.getElementById("secretReveal");
+
+  if(code === "animalcrossing"){
     const secretSound = document.getElementById("secretSound");
+    if(secretSound) secretSound.volume = 0.5;
     if(secretSound) secretSound.play();
-    reveal.innerHTML=`
+    reveal.innerHTML = `
       <h3>Secret World Unlocked</h3>
       <canvas id="secretGame" width="600" height="400" 
       style="border:3px solid red; background:black;"></canvas>
@@ -305,15 +335,17 @@ function checkSecret(){
     `;
     startMiniGame();
   }
-  else if(code==="mario"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret2.png' width='500'>";}
-  else if(code==="blox"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret3.png' width='500'>";}
-  else if(code==="sonic"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret4.png' width='500'>";}
-  else if(code==="kong"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret5.png' width='500'>";}
-  else if(code==="crossing"){window.location.href="game.html";}
-  else if(code==="weirdgeddon"){breakReality();}
+  else if(code === "mario"){document.getElementById("secretSound").volume=0.5; document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret2.png' width='500'>";}
+  else if(code === "blox"){document.getElementById("secretSound").volume=0.5; document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret3.png' width='500'>";}
+  else if(code === "sonic"){document.getElementById("secretSound").volume=0.5; document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret4.png' width='500'>";}
+  else if(code === "kong"){document.getElementById("secretSound").volume=0.5; document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret5.png' width='500'>";}
+  else if(code === "crossing"){document.getElementById("secretSound").volume=0.5; document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret6.png' width='500'>";}
+  else if(code === "apocalypse"){window.location.href="game.html";}
+  else if(code === "weirdmageddon"){breakReality();}
   else{reveal.innerHTML="<p>Access Denied.</p>";}
 }
 
+// MINI GAME
 function startMiniGame(){
   let canvas=document.getElementById("secretGame");
   let ctx=canvas.getContext("2d");
