@@ -4,6 +4,7 @@
 <title>WEIRDGEDDON</title>
 
 <style>
+/* ---------- GLOBAL ---------- */
 body{
   margin:0;
   background:black;
@@ -13,7 +14,7 @@ body{
   overflow:hidden;
 }
 
-/* START BUTTON OVERLAY */
+/* ---------- START BUTTON ---------- */
 #startOverlay{
   position:fixed;
   top:0; left:0; width:100%; height:100%;
@@ -27,7 +28,41 @@ body{
   z-index:9999;
 }
 
-/* COUNTDOWN */
+/* ---------- HERO SECTION ---------- */
+#heroSection{
+  position:relative;
+  width:100%;
+  height:500px;
+  overflow:hidden;
+}
+
+/* background video */
+#heroBg{
+  position:absolute;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  z-index:0;
+}
+
+/* logo floating + wobble */
+#logo{
+  position:relative;
+  z-index:1;
+  width:500px;
+  animation:floatRotate 4s ease-in-out infinite;
+}
+
+@keyframes floatRotate{
+  0%   { transform: translateY(0px) rotate(0deg) scale(1); }
+  25%  { transform: translateY(-15px) rotate(-2deg) scale(1.02); }
+  50%  { transform: translateY(-25px) rotate(2deg) scale(1); }
+  75%  { transform: translateY(-15px) rotate(-1deg) scale(1.01); }
+  100% { transform: translateY(0px) rotate(0deg) scale(1); }
+}
+
+/* ---------- COUNTDOWN ---------- */
 #countdown{
   position:absolute;
   top:50%;
@@ -36,9 +71,9 @@ body{
   font-size:120px;
   text-shadow:0 0 30px red;
   animation:shake .2s infinite;
+  z-index:2;
 }
 
-/* SHAKE */
 @keyframes shake{
   0%{transform:translate(-50%,-50%) translate(3px,3px);}
   50%{transform:translate(-50%,-50%) translate(-3px,-3px);}
@@ -132,10 +167,17 @@ button:hover{background:red; color:black;}
 <div id="countdown"></div>
 <div id="flash"></div>
 
+<!-- HERO SECTION -->
+<div id="heroSection">
+  <video id="heroBg" autoplay muted loop>
+    <source src="backgroundVideo.mp4" type="video/mp4">
+  </video>
+  <img id="logo" src="logo.png">
+</div>
+
 <!-- Main content -->
 <div id="content">
 
-  <img src="logo.png" width="500">
   <h1>WEIRDGEDDON</h1>
 
   <video width="700" controls>
@@ -186,7 +228,6 @@ let countIndex = 0;
 startOverlay.addEventListener('click', () => {
   startOverlay.style.display = 'none';
   showCountdown();
-  // start glitch sound fade-in or background music after countdown
 });
 
 function showCountdown(){
@@ -206,14 +247,12 @@ function revealContent(){
   flash.style.opacity = 1;
   setTimeout(()=>flash.style.opacity=0, 300);
 
-  // glitch sound
   const glitchSound = document.getElementById("glitchSound");
   if(glitchSound) glitchSound.play();
 
-  // start progressive background music
   const bgMusic = document.getElementById("bgMusic");
   if(bgMusic){
-    fadeInMusic(bgMusic, 10000, 0.3); // 10 second fade to 30% volume
+    fadeInMusic(bgMusic, 10000, 0.3);
   }
 
   setTimeout(()=>{
@@ -222,13 +261,11 @@ function revealContent(){
   },800);
 }
 
-/* progressive fade-in function */
 function fadeInMusic(audio, duration = 10000, targetVolume = 0.3){
   audio.volume = 0;
   audio.play();
   const stepTime = 100;
   const stepVolume = targetVolume / (duration / stepTime);
-
   const fade = setInterval(()=>{
     if(audio.volume + stepVolume < targetVolume){
       audio.volume += stepVolume;
@@ -239,13 +276,11 @@ function fadeInMusic(audio, duration = 10000, targetVolume = 0.3){
   }, stepTime);
 }
 
-/* SHOP SOUND */
 function playBuySound(){
   const buySound = document.getElementById("buySound");
   if(buySound) buySound.play();
 }
 
-/* SHOP RICKROLL */
 function rickroll(){
   document.getElementById("overlay").style.display="flex";
   setTimeout(()=>{
@@ -253,7 +288,6 @@ function rickroll(){
   },2000);
 }
 
-/* SECRET CODES */
 function checkSecret(){
   let code=document.getElementById("secretInput").value.toLowerCase();
   let reveal=document.getElementById("secretReveal");
@@ -269,31 +303,14 @@ function checkSecret(){
     `;
     startMiniGame();
   }
-  else if(code==="mario"){
-    document.getElementById("secretSound").play();
-    reveal.innerHTML="<img src='secret2.png' width='500'>";
-  }
-  else if(code==="blox"){
-    document.getElementById("secretSound").play();
-    reveal.innerHTML="<img src='secret3.png' width='500'>";
-  }
-  else if(code==="sonic"){
-    document.getElementById("secretSound").play();
-    reveal.innerHTML="<img src='secret4.png' width='500'>";
-  }
-  else if(code==="kong"){
-    document.getElementById("secretSound").play();
-    reveal.innerHTML="<img src='secret5.png' width='500'>";
-  }
-  else if(code==="weirdgeddon"){
-    breakReality();
-  }
-  else{
-    reveal.innerHTML="<p>Access Denied.</p>";
-  }
+  else if(code==="mario"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret2.png' width='500'>";}
+  else if(code==="blox"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret3.png' width='500'>";}
+  else if(code==="sonic"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret4.png' width='500'>";}
+  else if(code==="kong"){document.getElementById("secretSound").play(); reveal.innerHTML="<img src='secret5.png' width='500'>";}
+  else if(code==="weirdgeddon"){breakReality();}
+  else{reveal.innerHTML="<p>Access Denied.</p>";}
 }
 
-/* MINI GAME */
 function startMiniGame(){
   let canvas=document.getElementById("secretGame");
   let ctx=canvas.getContext("2d");
@@ -316,7 +333,6 @@ function startMiniGame(){
   draw();
 }
 
-/* BREAK REALITY */
 function breakReality(){
   document.body.style.animation="glitch 0.2s infinite";
   document.body.style.background="red";
@@ -335,7 +351,6 @@ function breakReality(){
   setTimeout(()=>overlay.innerHTML="YOU SHOULDN'T HAVE DONE THAT",4000);
 }
 
-/* GLITCH ANIMATION */
 let style=document.createElement('style');
 style.innerHTML=`
 @keyframes glitch{
@@ -346,7 +361,6 @@ style.innerHTML=`
 100%{transform:translate(2px,2px);}
 }`;
 document.head.appendChild(style);
-
 </script>
 
 </body>
