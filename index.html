@@ -169,6 +169,41 @@ button:hover{background:red; color:black;}
   object-fit:cover;
   z-index:100000;
 }
+
+/* ---------- RESPONSIVE ---------- */
+video, img {
+  max-width: 100%;
+  height: auto;
+}
+
+#trailerContainer video {
+  width: 90%;
+  max-width: 700px;
+}
+
+@media only screen and (max-width: 1024px) {
+  #logo {
+    width: 350px;
+  }
+
+  #countdown {
+    font-size: 80px;
+  }
+
+  button {
+    font-size: 18px;
+    padding: 12px 24px;
+  }
+
+  .shop-container {
+    padding: 20px;
+  }
+
+  .shop {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
 </style>
 </head>
 
