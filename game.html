@@ -3,224 +3,418 @@
 <head>
 <meta charset="UTF-8">
 <title>Weirdmageddon: Apocalypse</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body, html { width:100%; height:100%; overflow:hidden; background:black; font-family:'Press Start 2P', monospace; }
 
-/* Title screen canvas for moving background */
-#titleCanvas {
-  position:absolute; top:0; left:0; width:100%; height:100%; z-index:0;
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body,html{
+width:100%;
+height:100%;
+overflow:hidden;
+background:black;
+font-family:'Press Start 2P', monospace;
 }
 
-/* Title overlay */
-#titleOverlay {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
-  z-index:1;
+/* TITLE BACKGROUND */
+#titleCanvas{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+z-index:0;
 }
-#gameTitle { color:red; font-size:60px; text-shadow:4px 4px 0 black; margin-bottom:50px; text-align:center; }
-#startButton { padding:20px 50px; font-size:20px; background:black; color:red; border:3px solid red; cursor:pointer; transition:all 0.2s; }
-#startButton:hover { background:red; color:black; }
 
-/* Character chooser (hidden initially) */
-#charChooser {
-  display:none;
-  position:absolute; width:100%; height:100%;
-  background:#000;
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
-  color:red;
+/* TITLE OVERLAY */
+
+#titleOverlay{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+z-index:2;
 }
-#charChooser h2 { font-size:32px; margin-bottom:30px; text-shadow:2px 2px 0 black; }
-#characters { display:flex; gap:40px; flex-wrap:wrap; justify-content:center; }
-.charCard { display:flex; flex-direction:column; align-items:center; cursor:pointer; border:3px solid red; padding:10px; transition:transform 0.2s, background 0.2s; }
-.charCard:hover { transform:scale(1.1); background:rgba(255,0,0,0.2); }
-.charCard img { width:100px; height:100px; object-fit:contain; margin-bottom:10px; }
-.charCard span { font-size:16px; }
 
-/* Game canvas */
-#gameCanvas { display:none; background:#87CEEB; width:100%; height:100%; }
+#gameTitle{
+color:red;
+font-size:60px;
+text-shadow:4px 4px 0 black;
+margin-bottom:50px;
+text-align:center;
+}
+
+#startButton{
+padding:20px 50px;
+font-size:20px;
+background:black;
+color:red;
+border:3px solid red;
+cursor:pointer;
+}
+
+#startButton:hover{
+background:red;
+color:black;
+}
+
+/* CHARACTER SELECT */
+
+#charChooser{
+display:none;
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:black;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+color:red;
+z-index:3;
+}
+
+#charChooser h2{
+font-size:32px;
+margin-bottom:30px;
+}
+
+#characters{
+display:flex;
+gap:40px;
+flex-wrap:wrap;
+justify-content:center;
+}
+
+.charCard{
+display:flex;
+flex-direction:column;
+align-items:center;
+cursor:pointer;
+border:3px solid red;
+padding:10px;
+transition:0.2s;
+}
+
+.charCard:hover{
+transform:scale(1.1);
+background:rgba(255,0,0,0.2);
+}
+
+.charCard img{
+width:100px;
+height:100px;
+object-fit:contain;
+margin-bottom:10px;
+}
+
+/* GAME CANVAS */
+
+#gameCanvas{
+display:none;
+background:#87CEEB;
+image-rendering:pixelated;
+}
+
 </style>
 </head>
+
 <body>
 
-<!-- Title screen with canvas for moving background -->
-<canvas id="titleCanvas" width="900" height="400"></canvas>
+<canvas id="titleCanvas"></canvas>
+
 <div id="titleOverlay">
-  <div id="gameTitle">WEIRDMAGEDDON</div>
-  <button id="startButton">START</button>
+<div id="gameTitle">WEIRDMAGEDDON</div>
+<button id="startButton">START</button>
 </div>
 
-<!-- Character chooser -->
 <div id="charChooser">
-  <h2>Choose Your Character</h2>
-  <div id="characters"></div>
+<h2>Choose Your Character</h2>
+<div id="characters"></div>
 </div>
 
-<!-- Game canvas -->
-<canvas id="gameCanvas" width="900" height="400"></canvas>
+<canvas id="gameCanvas"></canvas>
 
 <script>
-// --------------------
-// Title screen moving background
-const titleCanvas = document.getElementById('titleCanvas');
-const ctxTitle = titleCanvas.getContext('2d');
-const bgImage = new Image();
-bgImage.src = '8bitbg.png';
-let bgX = 0;
 
-// Resize canvas to window
+/* ---------- TITLE SCREEN ---------- */
+
+const titleCanvas=document.getElementById("titleCanvas")
+const ctxTitle=titleCanvas.getContext("2d")
+
+const bgImage=new Image()
+bgImage.src="8bitbg.png"
+
+let bgX=0
+
 function resizeTitleCanvas(){
-  titleCanvas.width = window.innerWidth;
-  titleCanvas.height = window.innerHeight;
+titleCanvas.width=window.innerWidth
+titleCanvas.height=window.innerHeight
 }
-window.addEventListener('resize', resizeTitleCanvas);
-resizeTitleCanvas();
+
+window.addEventListener("resize",resizeTitleCanvas)
+resizeTitleCanvas()
 
 function drawTitleBackground(){
-  ctxTitle.clearRect(0,0,titleCanvas.width,titleCanvas.height);
-  const imgHeight = titleCanvas.height; // scale bg to full height
-  const imgWidth = bgImage.width * (imgHeight / bgImage.height);
-  // Draw repeated horizontally
-  for(let i=-imgWidth;i<titleCanvas.width+imgWidth;i+=imgWidth){
-    ctxTitle.drawImage(bgImage,i + bgX,0,imgWidth,imgHeight);
-  }
-  // Slowly scroll to the left
-  bgX -= 0.3;
-  if(bgX <= -imgWidth) bgX = 0;
-  requestAnimationFrame(drawTitleBackground);
+
+ctxTitle.clearRect(0,0,titleCanvas.width,titleCanvas.height)
+
+if(bgImage.complete){
+
+const imgHeight=titleCanvas.height
+const imgWidth=bgImage.width*(imgHeight/bgImage.height)
+
+for(let i=-imgWidth;i<titleCanvas.width+imgWidth;i+=imgWidth){
+ctxTitle.drawImage(bgImage,i+bgX,0,imgWidth,imgHeight)
 }
-bgImage.onload = ()=>{ drawTitleBackground(); }
 
-// --------------------
-// Title screen overlay elements
-const startButton = document.getElementById('startButton');
-const charChooser = document.getElementById('charChooser');
-const charactersDiv = document.getElementById('characters');
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+bgX-=0.3
+if(bgX<=-imgWidth)bgX=0
+}
 
-let selectedChar = null;
-let billUnlocked = localStorage.getItem('billUnlocked') === 'true';
+requestAnimationFrame(drawTitleBackground)
+}
 
-const charactersData = [
-  {id:'villager', name:'Villager', img:'characters/villager_boy/idle.png'},
-  {id:'sonic', name:'Sonic', img:'characters/sonic/idle.png'},
-  {id:'mario', name:'Mario', img:'characters/mario/idle.png'}
-];
-if(billUnlocked){ charactersData.push({id:'bill', name:'Bill Cipher', img:'characters/bill_cipher/idle.png'}); }
+drawTitleBackground()
 
-// Start button → character chooser
-startButton.addEventListener('click', ()=>{
-  document.getElementById('titleOverlay').style.display='none';
-  titleCanvas.style.display='none';
-  charChooser.style.display='flex';
-  showCharacterChooser();
-});
+/* ---------- UI ELEMENTS ---------- */
 
-// Populate character chooser
+const startButton=document.getElementById("startButton")
+const charChooser=document.getElementById("charChooser")
+const charactersDiv=document.getElementById("characters")
+const canvas=document.getElementById("gameCanvas")
+const ctx=canvas.getContext("2d")
+
+function resizeGameCanvas(){
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight
+}
+
+window.addEventListener("resize",resizeGameCanvas)
+
+/* ---------- INPUT ---------- */
+
+let keys={}
+
+document.addEventListener("keydown",e=>{
+keys[e.key]=true
+})
+
+document.addEventListener("keyup",e=>{
+keys[e.key]=false
+})
+
+/* ---------- CHARACTERS ---------- */
+
+let selectedChar=null
+let billUnlocked=localStorage.getItem("billUnlocked")==="true"
+
+const charactersData=[
+{id:"villager",name:"Villager",img:"characters/villager_boy/idle.png"},
+{id:"sonic",name:"Sonic",img:"characters/sonic/idle.png"},
+{id:"mario",name:"Mario",img:"characters/mario/idle.png"}
+]
+
+if(billUnlocked){
+charactersData.push({id:"bill",name:"Bill Cipher",img:"characters/bill_cipher/idle.png"})
+}
+
+startButton.addEventListener("click",()=>{
+
+document.getElementById("titleOverlay").style.display="none"
+titleCanvas.style.display="none"
+
+charChooser.style.display="flex"
+
+showCharacterChooser()
+
+})
+
 function showCharacterChooser(){
-  charactersDiv.innerHTML='';
-  charactersData.forEach(c=>{
-    const card = document.createElement('div');
-    card.className='charCard';
-    card.dataset.character=c.id;
-    card.innerHTML=`<img src="${c.img}" alt="${c.name}"><span>${c.name}</span>`;
-    charactersDiv.appendChild(card);
-    card.addEventListener('click',()=>{
-      selectedChar = c.id;
-      charChooser.style.display='none';
-      canvas.style.display='block';
-      startGame(selectedChar);
-    });
-  });
+
+charactersDiv.innerHTML=""
+
+charactersData.forEach(c=>{
+
+const card=document.createElement("div")
+card.className="charCard"
+
+card.innerHTML=`
+<img src="${c.img}">
+<span>${c.name}</span>
+`
+
+charactersDiv.appendChild(card)
+
+card.onclick=()=>{
+
+selectedChar=c.id
+
+charChooser.style.display="none"
+
+canvas.style.display="block"
+
+resizeGameCanvas()
+
+startGame(selectedChar)
+
 }
 
-// --------------------
-// Side-scroller game
+})
+
+}
+
+/* ---------- GAME ---------- */
+
 function startGame(character){
-  const sprites = {
-    villager:{idle:'characters/villager_boy/idle.png', walk1:'characters/villager_boy/walk1.png', walk2:'characters/villager_boy/walk2.png', jump:'characters/villager_boy/jump.png'},
-    sonic:{idle:'characters/sonic/idle.png', walk1:'characters/sonic/walk1.png', walk2:'characters/sonic/walk2.png', jump:'characters/sonic/jump.png'},
-    mario:{idle:'characters/mario/idle.png', walk1:'characters/mario/walk1.png', walk2:'characters/mario/walk2.png', jump:'characters/mario/jump.png'},
-    bill:{idle:'characters/bill_cipher/idle.png', walk1:'characters/bill_cipher/walk1.png', walk2:'characters/bill_cipher/walk2.png', jump:'characters/bill_cipher/jump.png'}
-  };
 
-  const playerSprite = sprites[character];
-  const idleImg = new Image(); idleImg.src = playerSprite.idle;
-  const walk1Img = new Image(); walk1Img.src = playerSprite.walk1;
-  const walk2Img = new Image(); walk2Img.src = playerSprite.walk2;
-  const jumpImg = new Image(); jumpImg.src = playerSprite.jump;
-  const bg = new Image(); bg.src = '8bitbg.png';
-
-  let player={x:100,y:300,width:50,height:50,velY:0,jumping:false};
-  const gravity=0.6; let keys={}; let cameraX=0;
-
-  const platforms=[
-    {x:0,y:350,width:2000,height:50},
-    {x:400,y:280,width:120,height:20},
-    {x:700,y:240,width:120,height:20},
-    {x:1000,y:300,width:120,height:20},
-    {x:1300,y:260,width:120,height:20}
-  ];
-
-  document.addEventListener('keydown', e=>{ keys[e.key]=true; });
-  document.addEventListener('keyup', e=>{ keys[e.key]=false; });
-
-  let walkTimer=0;
-
-  function update(){
-    const speed = (character==='sonic'||character==='bill')?8:5;
-    if(keys['ArrowRight']) player.x+=speed;
-    if(keys['ArrowLeft']) player.x-=speed;
-    if(keys[' '] && !player.jumping){ player.velY=-12; player.jumping=true; }
-
-    player.velY+=gravity;
-    player.y+=player.velY;
-
-    player.jumping=true;
-    platforms.forEach(p=>{
-      if(player.x<p.x+p.width && player.x+player.width>p.x &&
-         player.y<p.y+p.height && player.y+player.height>p.y){
-        player.y=p.y-player.height;
-        player.velY=0;
-        player.jumping=false;
-      }
-    });
-
-    cameraX=player.x-200;
-
-    if(player.x>=1500){
-      alert("You Win! Bill Cipher unlocked!");
-      localStorage.setItem('billUnlocked','true');
-      canvas.style.display='none';
-      charChooser.style.display='flex';
-      showCharacterChooser();
-    }
-  }
-
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    const bgWidth = bg.width || 512;
-    for(let i=-1;i<10;i++){
-      ctx.drawImage(bg,i*bgWidth - cameraX*0.5,0,bgWidth,canvas.height);
-    }
-    ctx.fillStyle='green';
-    platforms.forEach(p=>{ ctx.fillRect(p.x-cameraX,p.y,p.width,p.height); });
-
-    let img;
-    if(player.jumping) img=jumpImg;
-    else if(keys['ArrowLeft']||keys['ArrowRight']){
-      walkTimer++;
-      img=(walkTimer%20<10)?walk1Img:walk2Img;
-    } else img=idleImg;
-
-    ctx.drawImage(img,player.x-cameraX,player.y,player.width,player.height);
-  }
-
-  function loop(){ update(); draw(); requestAnimationFrame(loop); }
-  loop();
+const sprites={
+villager:{idle:"characters/villager_boy/idle.png",walk1:"characters/villager_boy/walk1.png",walk2:"characters/villager_boy/walk2.png",jump:"characters/villager_boy/jump.png"},
+sonic:{idle:"characters/sonic/idle.png",walk1:"characters/sonic/walk1.png",walk2:"characters/sonic/walk2.png",jump:"characters/sonic/jump.png"},
+mario:{idle:"characters/mario/idle.png",walk1:"characters/mario/walk1.png",walk2:"characters/mario/walk2.png",jump:"characters/mario/jump.png"},
+bill:{idle:"characters/bill_cipher/idle.png",walk1:"characters/bill_cipher/walk1.png",walk2:"characters/bill_cipher/walk2.png",jump:"characters/bill_cipher/jump.png"}
 }
+
+const playerSprite=sprites[character]
+
+const idleImg=new Image();idleImg.src=playerSprite.idle
+const walk1Img=new Image();walk1Img.src=playerSprite.walk1
+const walk2Img=new Image();walk2Img.src=playerSprite.walk2
+const jumpImg=new Image();jumpImg.src=playerSprite.jump
+
+const bg=new Image();bg.src="8bitbg.png"
+
+let player={
+x:100,
+y:300,
+width:50,
+height:50,
+velY:0,
+jumping:false
+}
+
+let gravity=0.6
+let cameraX=0
+let walkTimer=0
+
+const portal={x:1500,y:260,width:40,height:80}
+
+const platforms=[
+{x:0,y:350,width:2000,height:50},
+{x:400,y:280,width:120,height:20},
+{x:700,y:240,width:120,height:20},
+{x:1000,y:300,width:120,height:20},
+{x:1300,y:260,width:120,height:20}
+]
+
+function update(){
+
+const speed=(character==="sonic"||character==="bill")?8:5
+
+if(keys["ArrowRight"])player.x+=speed
+if(keys["ArrowLeft"])player.x-=speed
+
+if(keys[" "]&&!player.jumping){
+player.velY=(character==="bill")?-9:-12
+player.jumping=true
+}
+
+player.velY+=gravity
+player.y+=player.velY
+
+player.jumping=true
+
+platforms.forEach(p=>{
+
+if(player.x<p.x+p.width&&player.x+player.width>p.x&&
+player.y<p.y+p.height&&player.y+player.height>p.y){
+
+player.y=p.y-player.height
+player.velY=0
+player.jumping=false
+
+}
+
+})
+
+cameraX=player.x-200
+
+if(player.y>canvas.height+200){
+alert("You fell into the nightmare.")
+location.reload()
+}
+
+if(player.x<portal.x+portal.width&&
+player.x+player.width>portal.x&&
+player.y<portal.y+portal.height&&
+player.y+player.height>portal.y){
+
+alert("You Win! Bill Cipher unlocked!")
+
+localStorage.setItem("billUnlocked","true")
+
+location.reload()
+
+}
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+const bgWidth=bg.width||512
+
+for(let i=-1;i<10;i++){
+ctx.drawImage(bg,i*bgWidth-cameraX*0.5,0,bgWidth,canvas.height)
+}
+
+ctx.fillStyle="green"
+
+platforms.forEach(p=>{
+ctx.fillRect(p.x-cameraX,p.y,p.width,p.height)
+})
+
+ctx.fillStyle="purple"
+ctx.fillRect(portal.x-cameraX,portal.y,portal.width,portal.height)
+
+let img
+
+if(player.jumping)img=jumpImg
+else if(keys["ArrowLeft"]||keys["ArrowRight"]){
+
+walkTimer++
+img=(walkTimer%20<10)?walk1Img:walk2Img
+
+}
+else img=idleImg
+
+ctx.drawImage(img,player.x-cameraX,player.y,player.width,player.height)
+
+}
+
+function loop(){
+
+update()
+draw()
+
+requestAnimationFrame(loop)
+
+}
+
+loop()
+
+}
+
 </script>
+
 </body>
 </html>
