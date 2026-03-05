@@ -5,7 +5,7 @@
 <title>Weirdmageddon: Apocalypse</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-body, html { margin:0; padding:0; overflow:hidden; font-family:'Press Start 2P', monospace; background:black; }
+body, html { margin:0; padding:0; overflow:hidden; font-family:'Press Start 2P', monospace; background:black; touch-action:none; }
 canvas{display:block;}
 #bgCanvas{ position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; }
 #gameCanvas{ position:absolute; top:0; left:0; z-index:2; }
@@ -31,6 +31,16 @@ button:hover{background:red;color:black;}
 .charCard:hover{transform:scale(1.1); background:rgba(255,0,0,0.2);}
 .charCard img{width:100px; height:100px; object-fit:contain; margin-bottom:10px;}
 .charCard span{font-size:16px;}
+
+/* Mobile controls */
+#mobileControls{
+  position:absolute; bottom:20px; width:100%; display:flex; justify-content:center; gap:20px; z-index:5; display:none;
+}
+.mobileButton{
+  width:60px; height:60px; border-radius:10px; background:rgba(255,0,0,0.4);
+  color:black; font-size:30px; display:flex; justify-content:center; align-items:center;
+  user-select:none; touch-action:none;
+}
 </style>
 </head>
 <body>
@@ -49,6 +59,13 @@ button:hover{background:red;color:black;}
 
 <canvas id="gameCanvas"></canvas>
 
+<!-- Mobile controls -->
+<div id="mobileControls">
+  <div id="leftBtn" class="mobileButton">&#8592;</div>
+  <div id="jumpBtn" class="mobileButton">&#8593;</div>
+  <div id="rightBtn" class="mobileButton">&#8594;</div>
+</div>
+
 <script>
 // --- Canvas setup
 const bgCanvas = document.getElementById("bgCanvas");
@@ -63,17 +80,18 @@ function resizeCanvas(){
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// --- Background image
+// --- Background
 const bgImage = new Image();
 bgImage.src = "8bitbg.png";
 let bgX = 0;
 let autoScroll = true;
 
-// --- Title screen overlay
+// --- UI elements
 const startButton = document.getElementById("startButton");
 const titleOverlay = document.getElementById("titleOverlay");
 const charChooser = document.getElementById("charChooser");
 const charactersDiv = document.getElementById("characters");
+const mobileControls = document.getElementById("mobileControls");
 let selectedChar = null;
 
 // --- Characters
@@ -87,20 +105,29 @@ const charactersData = [
 // --- Load sprites
 const loadedSprites = {};
 charactersData.forEach(c=>{
-  loadedSprites[c.id]={};
+  loadedSprites[c.id] = {};
   c.sprites.forEach(anim=>{
     const img = new Image();
-    if(c.id==='villager') img.src = c.folder+anim+'.png';
-    else img.src = c.folder+c.id.charAt(0)+anim+'.png'; // e.g., swalk1.png
+    if(c.id==='villager') img.src = c.folder + anim + '.png';
+    else img.src = c.folder + c.id.charAt(0) + anim + '.png';
     loadedSprites[c.id][anim] = img;
   });
 });
 
-// --- Start button click
+// --- Floor
+const floorImg = new Image();
+floorImg.src = "floor.png";
+
+// --- Player
+let player, cameraX=0;
+const gravity = 0.6;
+let keys = {};
+
+// --- Start button
 startButton.addEventListener("click", ()=>{
   titleOverlay.style.display="none";
   charChooser.style.display="flex";
-  autoScroll = true; // keep background moving slowly for chooser
+  autoScroll = true;
   showCharacterChooser();
 });
 
@@ -117,21 +144,14 @@ function showCharacterChooser(){
       selectedChar = c;
       charChooser.style.display='none';
       autoScroll=false;
+      // Show mobile controls if mobile
+      if(/Mobi|Android/i.test(navigator.userAgent)){
+        mobileControls.style.display='flex';
+      }
       startGame(selectedChar);
     });
   });
 }
-
-// --- Floor
-const floorImg = new Image();
-floorImg.src = "floor.png";
-
-// --- Player and camera
-let player, cameraX = 0;
-const gravity = 0.6;
-let keys = {};
-document.addEventListener("keydown", e=>keys[e.key]=true);
-document.addEventListener("keyup", e=>keys[e.key]=false);
 
 // --- Start game
 function startGame(char){
@@ -147,11 +167,12 @@ function startGame(char){
 // --- Update
 let walkTimer=0;
 function update(){
-  if(keys["ArrowRight"]||keys["d"]) player.velX = player.speed;
-  else if(keys["ArrowLeft"]||keys["a"]) player.velX = -player.speed;
+  // Keyboard controls
+  if(keys["ArrowRight"]||keys["d"]||keys["mobileRight"]) player.velX = player.speed;
+  else if(keys["ArrowLeft"]||keys["a"]||keys["mobileLeft"]) player.velX = -player.speed;
   else player.velX = 0;
 
-  if((keys[" "]||keys["w"]) && !player.jumping){
+  if((keys[" "]||keys["w"]||keys["mobileJump"]) && !player.jumping){
     player.velY = player.jumpPower;
     player.jumping = true;
   }
@@ -167,6 +188,7 @@ function update(){
     player.jumping = false;
   }
 
+  // Damage test (press h)
   if(keys["h"] && !player.damaged){
     player.damaged = true;
     player.damageTimer = 30;
@@ -184,18 +206,18 @@ function update(){
 function draw(){
   ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
 
-  // Draw floor
+  // Floor
   const floorY = gameCanvas.height - 64;
   for(let x=0;x<5000;x+=64){
     ctx.drawImage(floorImg, x-cameraX, floorY, 64, 64);
   }
 
-  // Draw player
+  // Player
   const charSprites = loadedSprites[player.character];
   let img;
   if(player.damaged) img = charSprites.damaged;
   else if(player.jumping) img = charSprites.jump;
-  else if(keys["ArrowLeft"]||keys["ArrowRight"]||keys["a"]||keys["d"]){
+  else if(keys["ArrowLeft"]||keys["ArrowRight"]||keys["a"]||keys["d"]||keys["mobileLeft"]||keys["mobileRight"]){
     walkTimer++;
     img = (walkTimer%20<10)?charSprites.walk1:charSprites.walk2;
   } else img = charSprites.crouch || charSprites.idle;
@@ -203,7 +225,7 @@ function draw(){
 
   ctx.drawImage(img, player.x-cameraX, player.y, player.width, player.height);
 
-  // Draw background
+  // Background
   const imgHeight = bgCanvas.height;
   const imgWidth = bgImage.width * (imgHeight/bgImage.height);
   let drawX = autoScroll ? bgX : -cameraX*0.5;
@@ -223,6 +245,30 @@ function gameLoop(){
   draw();
   requestAnimationFrame(gameLoop);
 }
+
+// --- Keyboard
+document.addEventListener("keydown", e=>keys[e.key]=true);
+document.addEventListener("keyup", e=>keys[e.key]=false);
+
+// --- Mobile buttons
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+const jumpBtn = document.getElementById("jumpBtn");
+
+[leftBtn,rightBtn,jumpBtn].forEach(btn=>{
+  btn.addEventListener("touchstart", e=>{
+    e.preventDefault();
+    if(btn===leftBtn) keys.mobileLeft=true;
+    else if(btn===rightBtn) keys.mobileRight=true;
+    else if(btn===jumpBtn) keys.mobileJump=true;
+  });
+  btn.addEventListener("touchend", e=>{
+    e.preventDefault();
+    if(btn===leftBtn) keys.mobileLeft=false;
+    else if(btn===rightBtn) keys.mobileRight=false;
+    else if(btn===jumpBtn) keys.mobileJump=false;
+  });
+});
 </script>
 </body>
 </html>
