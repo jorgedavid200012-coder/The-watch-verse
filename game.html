@@ -7,14 +7,17 @@
 <style>
 body, html { margin:0; padding:0; overflow:hidden; font-family:'Press Start 2P', monospace; background:black; }
 canvas{display:block;}
+#bgCanvas{ position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; }
+#gameCanvas{ position:absolute; top:0; left:0; z-index:2; }
 #titleOverlay, #charChooser{
-  position:absolute;top:0;left:0;width:100%;height:100%;display:flex;
-  justify-content:center;align-items:center;flex-direction:column;
-  color:red;text-align:center;
-  z-index:1;
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  color:red; text-align:center;
   font-family:'Press Start 2P', monospace;
+  z-index:3;
+  pointer-events:auto;
 }
-#gameTitle{font-size:60px;text-shadow:0 0 10px black;margin-bottom:40px;}
+#gameTitle{font-size:60px; text-shadow:0 0 10px black; margin-bottom:40px;}
 button{
   font-family:'Press Start 2P', monospace;
   font-size:18px;
@@ -26,57 +29,63 @@ button{
   transition:0.2s;
 }
 button:hover{background:red;color:black;}
-#characters{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;}
-.charCard{display:flex;flex-direction:column;align-items:center;cursor:pointer;border:3px solid red;padding:10px;transition:0.2s;}
-.charCard:hover{transform:scale(1.1);background:rgba(255,0,0,0.2);}
-.charCard img{width:100px;height:100px;object-fit:contain;margin-bottom:10px;}
+#characters{display:flex; gap:40px; flex-wrap:wrap; justify-content:center;}
+.charCard{display:flex; flex-direction:column; align-items:center; cursor:pointer; border:3px solid red; padding:10px; transition:0.2s;}
+.charCard:hover{transform:scale(1.1); background:rgba(255,0,0,0.2);}
+.charCard img{width:100px; height:100px; object-fit:contain; margin-bottom:10px;}
 .charCard span{font-size:16px;}
 </style>
 </head>
 <body>
 
-<!-- Canvas for moving background -->
 <canvas id="bgCanvas"></canvas>
-
-<!-- Title overlay -->
 <div id="titleOverlay">
   <div id="gameTitle">WEIRDMAGEDDON</div>
   <button id="startButton">START</button>
 </div>
 
-<!-- Character chooser overlay -->
 <div id="charChooser" style="display:none;">
   <h2>Choose Your Character</h2>
   <div id="characters"></div>
 </div>
 
+<canvas id="gameCanvas"></canvas>
+
 <script>
 // --------------------
-// Background canvas
+// Canvas setup
 const bgCanvas = document.getElementById("bgCanvas");
 const bgCtx = bgCanvas.getContext("2d");
-let bgImage = new Image();
-bgImage.src = "8bitbg.png";
-let bgX = 0;
+const gameCanvas = document.getElementById("gameCanvas");
+const ctx = gameCanvas.getContext("2d");
+
 function resizeCanvas(){
-  bgCanvas.width = window.innerWidth;
-  bgCanvas.height = window.innerHeight;
+  bgCanvas.width = gameCanvas.width = window.innerWidth;
+  bgCanvas.height = gameCanvas.height = window.innerHeight;
 }
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
 // --------------------
-// Moving background draw
-function drawBackground(){
+// Background
+const bgImage = new Image();
+bgImage.src = "8bitbg.png";
+let bgX = 0;
+let autoScroll = true; // true for title/character chooser, false in game
+
+function drawBackground(cameraX=0){
   const imgHeight = bgCanvas.height;
   const imgWidth = bgImage.width * (imgHeight/bgImage.height);
   bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
-  for(let i=-imgWidth;i<bgCanvas.width+imgWidth;i+=imgWidth){
-    bgCtx.drawImage(bgImage,i+bgX,0,imgWidth,imgHeight);
+  let drawX = autoScroll ? bgX : -cameraX*0.5; // slow auto-scroll vs player scroll
+  for(let i=-imgWidth; i<bgCanvas.width+imgWidth; i+=imgWidth){
+    bgCtx.drawImage(bgImage, i+drawX, 0, imgWidth, imgHeight);
   }
-  bgX -= 0.3;
-  if(bgX <= -imgWidth) bgX = 0;
-  requestAnimationFrame(drawBackground);
+  if(autoScroll) {
+    bgX -= 0.2; // slow automatic movement
+    if(bgX <= -imgWidth) bgX = 0;
+  }
+  requestAnimationFrame(()=> drawBackground(cameraX));
 }
 bgImage.onload = ()=>{ drawBackground(); };
 
@@ -93,23 +102,24 @@ const charactersData = [
   {id:'villager', name:'Villager', img:'characters/villager/idle.png'}
 ];
 
-startButton.addEventListener("click",()=>{
-  titleOverlay.style.display="none";
-  charChooser.style.display="flex";
+startButton.addEventListener("click", ()=>{
+  titleOverlay.style.display = "none";
+  charChooser.style.display = "flex";
   showCharacterChooser();
 });
 
 function showCharacterChooser(){
-  charactersDiv.innerHTML='';
+  charactersDiv.innerHTML = '';
   charactersData.forEach(c=>{
     const card = document.createElement('div');
     card.className = 'charCard';
     card.dataset.character = c.id;
-    card.innerHTML=`<img src="${c.img}"><span>${c.name}</span>`;
+    card.innerHTML = `<img src="${c.img}"><span>${c.name}</span>`;
     charactersDiv.appendChild(card);
     card.addEventListener('click', ()=>{
       selectedChar = c.id;
       charChooser.style.display='none';
+      autoScroll = false; // stop auto-scroll in game
       startGame(selectedChar);
     });
   });
@@ -117,24 +127,15 @@ function showCharacterChooser(){
 
 // --------------------
 // Game setup
-const gameCanvas = document.createElement("canvas");
-const ctx = gameCanvas.getContext("2d");
-document.body.appendChild(gameCanvas);
-gameCanvas.style.position="absolute";
-gameCanvas.style.top=0;
-gameCanvas.style.left=0;
-gameCanvas.style.zIndex=2;
-gameCanvas.width = window.innerWidth;
-gameCanvas.height = window.innerHeight;
-
 const floorImg = new Image();
 floorImg.src = "floor.png";
 
 let player;
-let cameraX=0;
-const gravity=0.6;
+let cameraX = 0;
+const gravity = 0.6;
 
-// Villager sprites
+// --------------------
+// Sprites
 const sprites = {
   villager:{
     idle:"characters/villager/idle.png",
@@ -155,15 +156,16 @@ for(const char in sprites){
   }
 }
 
-// Keys
-let keys = {};
-document.addEventListener("keydown",e=>keys[e.key]=true);
-document.addEventListener("keyup",e=>keys[e.key]=false);
+// --------------------
+// Controls
+let keys={};
+document.addEventListener("keydown", e=>keys[e.key]=true);
+document.addEventListener("keyup", e=>keys[e.key]=false);
 
 // --------------------
 // Start game
 function startGame(character){
-  player={
+  player = {
     x:100,
     y:gameCanvas.height-120,
     width:50,
@@ -184,40 +186,40 @@ function startGame(character){
 // Update
 let walkTimer=0;
 function update(){
-  if(keys["ArrowRight"]||keys["d"]) player.velX=player.speed;
-  else if(keys["ArrowLeft"]||keys["a"]) player.velX=-player.speed;
-  else player.velX=0;
+  if(keys["ArrowRight"]||keys["d"]) player.velX = player.speed;
+  else if(keys["ArrowLeft"]||keys["a"]) player.velX = -player.speed;
+  else player.velX = 0;
 
-  if((keys[" "]||keys["w"])&&!player.jumping){
-    player.velY=player.jumpPower;
-    player.jumping=true;
+  if((keys[" "]||keys["w"]) && !player.jumping){
+    player.velY = player.jumpPower;
+    player.jumping = true;
   }
 
   player.velY += gravity;
   player.x += player.velX;
   player.y += player.velY;
 
-  // floor collision
+  // Floor collision
   const floorY = gameCanvas.height - 64;
   if(player.y + player.height >= floorY){
     player.y = floorY - player.height;
     player.velY = 0;
-    player.jumping=false;
+    player.jumping = false;
   }
 
-  // simulate damage
+  // Damage simulation (H key)
   if(keys["h"] && !player.damaged){
-    player.damaged=true;
-    player.damageTimer=30;
+    player.damaged = true;
+    player.damageTimer = 30;
   }
   if(player.damaged){
     player.damageTimer--;
-    if(player.damageTimer<=0) player.damaged=false;
+    if(player.damageTimer <= 0) player.damaged=false;
   }
 
-  // camera
+  // Camera follow
   cameraX = player.x - gameCanvas.width/2;
-  if(cameraX<0) cameraX=0;
+  if(cameraX < 0) cameraX = 0;
 }
 
 // --------------------
@@ -225,24 +227,27 @@ function update(){
 function draw(){
   ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
 
-  // draw floor
-  const floorY = gameCanvas.height-64;
+  // Draw floor
+  const floorY = gameCanvas.height - 64;
   for(let x=0;x<5000;x+=64){
-    ctx.drawImage(floorImg,x-cameraX,floorY,64,64);
+    ctx.drawImage(floorImg, x-cameraX, floorY, 64, 64);
   }
 
-  // draw player sprite
+  // Draw player
   const charSprites = loadedSprites[player.character];
   let img;
   if(player.damaged) img = charSprites.damaged;
   else if(player.jumping) img = charSprites.jump;
   else if(keys["ArrowLeft"]||keys["ArrowRight"]||keys["a"]||keys["d"]){
     walkTimer++;
-    img=(walkTimer%20<10)?charSprites.walk1:charSprites.walk2;
-  } else if(keys["s"]) img=charSprites.crouch;
-  else img=charSprites.idle;
+    img = (walkTimer%20<10) ? charSprites.walk1 : charSprites.walk2;
+  } else if(keys["s"]) img = charSprites.crouch;
+  else img = charSprites.idle;
 
-  ctx.drawImage(img,player.x-cameraX,player.y,player.width,player.height);
+  ctx.drawImage(img, player.x-cameraX, player.y, player.width, player.height);
+
+  // Update background with cameraX in game
+  drawBackground(cameraX);
 }
 
 // --------------------
