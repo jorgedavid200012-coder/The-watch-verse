@@ -4,122 +4,42 @@
 <meta charset="UTF-8">
 <title>Weirdmageddon: Apocalypse</title>
 <style>
-/* Reset */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body, html { width:100%; height:100%; overflow:hidden; background:black; font-family:"Press Start 2P", monospace; }
 
-/* Fullscreen */
-body, html {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: black;
-  font-family: "Press Start 2P", monospace;
-}
-
-/* Video intro */
-#introVideo {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+/* Intro video */
+#introVideo { position:absolute; width:100%; height:100%; object-fit:cover; }
 
 /* Title screen */
 #titleScreen {
-  display: none;
-  position: absolute;
-  width: 100%;
-  height: 100%;
+  display:none;
+  position:absolute; width:100%; height:100%;
   background: url('8bitbg.png') repeat-x;
-  background-size: auto 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  background-size:auto 100%;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
 }
-
-/* 8-bit styled title */
-#gameTitle {
-  color: red;
-  font-size: 60px;
-  text-shadow: 4px 4px 0 black, -2px 2px 0 black;
-  font-family: "Press Start 2P", monospace;
-  margin-bottom: 50px;
-  text-align: center;
-}
-
-/* Start button */
-#startButton {
-  padding: 20px 50px;
-  font-size: 20px;
-  font-family: "Press Start 2P", monospace;
-  background: black;
-  color: red;
-  border: 3px solid red;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-#startButton:hover {
-  background: red;
-  color: black;
-}
+#gameTitle { color:red; font-size:60px; text-shadow:4px 4px 0 black, -2px 2px 0 black; margin-bottom:50px; text-align:center; }
+#startButton { padding:20px 50px; font-size:20px; background:black; color:red; border:3px solid red; cursor:pointer; transition:all 0.2s; }
+#startButton:hover { background:red; color:black; }
 
 /* Character chooser */
 #charChooser {
-  display: none;
-  position: absolute;
-  width: 100%;
-  height: 100%;
+  display:none;
+  position:absolute; width:100%; height:100%;
   background: url('8bitbg.png') repeat-x;
-  background-size: auto 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: red;
+  background-size:auto 100%;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  color:red;
 }
+#charChooser h2 { font-size:32px; margin-bottom:30px; text-shadow:2px 2px 0 black; }
+#characters { display:flex; gap:40px; flex-wrap:wrap; justify-content:center; }
+.charCard { display:flex; flex-direction:column; align-items:center; cursor:pointer; border:3px solid red; padding:10px; transition:transform 0.2s, background 0.2s; }
+.charCard:hover { transform:scale(1.1); background:rgba(255,0,0,0.2); }
+.charCard img { width:100px; height:100px; object-fit:contain; margin-bottom:10px; }
+.charCard span { font-size:16px; }
 
-#charChooser h2 {
-  font-family: "Press Start 2P", monospace;
-  font-size: 32px;
-  margin-bottom: 30px;
-  text-shadow: 2px 2px 0 black;
-}
-
-#characters {
-  display: flex;
-  gap: 40px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.charCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  border: 3px solid red;
-  padding: 10px;
-  transition: transform 0.2s, background 0.2s;
-}
-
-.charCard:hover {
-  transform: scale(1.1);
-  background: rgba(255,0,0,0.2);
-}
-
-.charCard img {
-  width: 100px;
-  height: 100px;
-  object-fit: contain;
-  margin-bottom: 10px;
-}
-
-.charCard span {
-  font-family: "Press Start 2P", monospace;
-  font-size: 16px;
-}
+/* Game canvas */
+#gameCanvas { display:none; background:#87CEEB; width:100%; height:100%; }
 </style>
 </head>
 <body>
@@ -154,36 +74,167 @@ body, html {
   </div>
 </div>
 
+<!-- Game canvas -->
+<canvas id="gameCanvas" width="900" height="400"></canvas>
+
 <script>
+// Screens
 const introVideo = document.getElementById('introVideo');
 const titleScreen = document.getElementById('titleScreen');
 const startButton = document.getElementById('startButton');
 const charChooser = document.getElementById('charChooser');
 const charCards = document.querySelectorAll('.charCard');
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-// Step 1: Play intro for ~3 seconds then show title screen
+let selectedChar = null;
+
+// Step 1: Intro video (3s) then show title
 introVideo.addEventListener('loadedmetadata', () => {
   setTimeout(() => {
-    introVideo.style.display = 'none';
-    titleScreen.style.display = 'flex';
+    introVideo.style.display='none';
+    titleScreen.style.display='flex';
   }, 3000);
 });
 
-// Step 2: Start button shows character chooser
+// Step 2: Title screen → Character chooser
 startButton.addEventListener('click', () => {
-  titleScreen.style.display = 'none';
-  charChooser.style.display = 'flex';
+  titleScreen.style.display='none';
+  charChooser.style.display='flex';
 });
 
 // Step 3: Character selection
 charCards.forEach(card => {
   card.addEventListener('click', () => {
-    const selectedChar = card.getAttribute('data-character');
-    console.log("Selected character:", selectedChar);
-    alert("You selected: " + selectedChar + "\nGame will start here!");
-    // Here we will later start the actual side-scroller game using selectedChar
+    selectedChar = card.getAttribute('data-character');
+    charChooser.style.display='none';
+    canvas.style.display='block';
+    startGame(selectedChar);
   });
 });
+
+// --------------------
+// Game logic
+// --------------------
+function startGame(character){
+  // Character sprite paths
+  const sprites = {
+    villager: {
+      idle: 'characters/villager_boy/idle.png',
+      walk1: 'characters/villager_boy/walk1.png',
+      walk2: 'characters/villager_boy/walk2.png',
+      jump: 'characters/villager_boy/jump.png'
+    },
+    sonic: {
+      idle: 'characters/sonic/idle.png',
+      walk1: 'characters/sonic/walk1.png',
+      walk2: 'characters/sonic/walk2.png',
+      jump: 'characters/sonic/jump.png'
+    },
+    mario: {
+      idle: 'characters/mario/idle.png',
+      walk1: 'characters/mario/walk1.png',
+      walk2: 'characters/mario/walk2.png',
+      jump: 'characters/mario/jump.png'
+    }
+  };
+
+  const playerSprite = sprites[character];
+
+  // Load images
+  const idleImg = new Image(); idleImg.src = playerSprite.idle;
+  const walk1Img = new Image(); walk1Img.src = playerSprite.walk1;
+  const walk2Img = new Image(); walk2Img.src = playerSprite.walk2;
+  const jumpImg = new Image(); jumpImg.src = playerSprite.jump;
+
+  const bg = new Image(); bg.src = '8bitbg.png';
+
+  // Player physics
+  let player = { x:100, y:300, width:50, height:50, velY:0, jumping:false };
+  const gravity = 0.6;
+  let keys = {};
+  let cameraX = 0;
+
+  // Platforms
+  const platforms = [
+    {x:0,y:350,width:2000,height:50},
+    {x:400,y:280,width:120,height:20},
+    {x:700,y:240,width:120,height:20},
+    {x:1000,y:300,width:120,height:20},
+    {x:1300,y:260,width:120,height:20}
+  ];
+
+  document.addEventListener('keydown', e => { keys[e.key]=true; });
+  document.addEventListener('keyup', e => { keys[e.key]=false; });
+
+  let walkFrame = 0;
+  let walkTimer = 0;
+
+  function update(){
+    // horizontal movement
+    if(keys['ArrowRight']) player.x += (character==='sonic'?8:5);
+    if(keys['ArrowLeft']) player.x -= (character==='sonic'?8:5);
+
+    // jump
+    if(keys[' '] && !player.jumping){
+      player.velY = -12;
+      player.jumping = true;
+    }
+
+    // gravity
+    player.velY += gravity;
+    player.y += player.velY;
+
+    // collision
+    player.jumping = true;
+    platforms.forEach(p=>{
+      if(player.x < p.x+p.width && player.x+player.width > p.x &&
+         player.y < p.y+p.height && player.y+player.height > p.y){
+           player.y = p.y - player.height;
+           player.velY = 0;
+           player.jumping = false;
+      }
+    });
+
+    // camera
+    cameraX = player.x - 200;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // background
+    const bgWidth = bg.width || 512;
+    const bgHeight = bg.height || 256;
+    for(let i=-1;i<10;i++){
+      ctx.drawImage(bg, i*bgWidth - cameraX*0.5, 0, bgWidth, canvas.height);
+    }
+
+    // platforms
+    ctx.fillStyle='green';
+    platforms.forEach(p=>{
+      ctx.fillRect(p.x - cameraX, p.y, p.width, p.height);
+    });
+
+    // player sprite
+    let img;
+    if(player.jumping) img = jumpImg;
+    else if(keys['ArrowLeft']||keys['ArrowRight']){
+      walkTimer++;
+      if(walkTimer % 20 <10) img = walk1Img;
+      else img = walk2Img;
+    } else img = idleImg;
+
+    ctx.drawImage(img, player.x - cameraX, player.y, player.width, player.height);
+  }
+
+  function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
 </script>
 </body>
 </html>
