@@ -8,27 +8,26 @@
 * { margin:0; padding:0; box-sizing:border-box; }
 body, html { width:100%; height:100%; overflow:hidden; background:black; font-family:'Press Start 2P', monospace; }
 
-/* Glitch overlay */
-#glitch { position:absolute; top:0; left:0; width:100%; height:100%; background:black; z-index:10000; }
-
-/* Title screen */
-#titleScreen {
-  display:none;
-  position:absolute; width:100%; height:100%;
-  background: url('8bitbg.png') repeat-x;
-  background-size: auto 100%;
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
+/* Title screen canvas for moving background */
+#titleCanvas {
+  position:absolute; top:0; left:0; width:100%; height:100%; z-index:0;
 }
-#gameTitle { color:red; font-size:60px; text-shadow:4px 4px 0 black; margin-bottom:50px; text-align:center; opacity:0; transition:opacity 0.5s; }
-#startButton { padding:20px 50px; font-size:20px; background:black; color:red; border:3px solid red; cursor:pointer; transition:all 0.2s; opacity:0; }
+
+/* Title overlay */
+#titleOverlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  z-index:1;
+}
+#gameTitle { color:red; font-size:60px; text-shadow:4px 4px 0 black; margin-bottom:50px; text-align:center; }
+#startButton { padding:20px 50px; font-size:20px; background:black; color:red; border:3px solid red; cursor:pointer; transition:all 0.2s; }
 #startButton:hover { background:red; color:black; }
 
-/* Character chooser hidden initially */
+/* Character chooser (hidden initially) */
 #charChooser {
   display:none;
   position:absolute; width:100%; height:100%;
-  background: url('8bitbg.png') repeat-x;
-  background-size:auto 100%;
+  background:#000;
   display:flex; flex-direction:column; justify-content:center; align-items:center;
   color:red;
 }
@@ -45,10 +44,9 @@ body, html { width:100%; height:100%; overflow:hidden; background:black; font-fa
 </head>
 <body>
 
-<div id="glitch"></div>
-
-<!-- Title screen -->
-<div id="titleScreen">
+<!-- Title screen with canvas for moving background -->
+<canvas id="titleCanvas" width="900" height="400"></canvas>
+<div id="titleOverlay">
   <div id="gameTitle">WEIRDMAGEDDON</div>
   <button id="startButton">START</button>
 </div>
@@ -63,21 +61,48 @@ body, html { width:100%; height:100%; overflow:hidden; background:black; font-fa
 <canvas id="gameCanvas" width="900" height="400"></canvas>
 
 <script>
-// Screens
-const glitch = document.getElementById('glitch');
-const titleScreen = document.getElementById('titleScreen');
-const gameTitle = document.getElementById('gameTitle');
+// --------------------
+// Title screen moving background
+const titleCanvas = document.getElementById('titleCanvas');
+const ctxTitle = titleCanvas.getContext('2d');
+const bgImage = new Image();
+bgImage.src = '8bitbg.png';
+let bgX = 0;
+
+// Resize canvas to window
+function resizeTitleCanvas(){
+  titleCanvas.width = window.innerWidth;
+  titleCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeTitleCanvas);
+resizeTitleCanvas();
+
+function drawTitleBackground(){
+  ctxTitle.clearRect(0,0,titleCanvas.width,titleCanvas.height);
+  const imgHeight = titleCanvas.height; // scale bg to full height
+  const imgWidth = bgImage.width * (imgHeight / bgImage.height);
+  // Draw repeated horizontally
+  for(let i=-imgWidth;i<titleCanvas.width+imgWidth;i+=imgWidth){
+    ctxTitle.drawImage(bgImage,i + bgX,0,imgWidth,imgHeight);
+  }
+  // Slowly scroll to the left
+  bgX -= 0.3;
+  if(bgX <= -imgWidth) bgX = 0;
+  requestAnimationFrame(drawTitleBackground);
+}
+bgImage.onload = ()=>{ drawTitleBackground(); }
+
+// --------------------
+// Title screen overlay elements
 const startButton = document.getElementById('startButton');
 const charChooser = document.getElementById('charChooser');
 const charactersDiv = document.getElementById('characters');
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Game state
 let selectedChar = null;
 let billUnlocked = localStorage.getItem('billUnlocked') === 'true';
 
-// Characters
 const charactersData = [
   {id:'villager', name:'Villager', img:'characters/villager_boy/idle.png'},
   {id:'sonic', name:'Sonic', img:'characters/sonic/idle.png'},
@@ -85,33 +110,10 @@ const charactersData = [
 ];
 if(billUnlocked){ charactersData.push({id:'bill', name:'Bill Cipher', img:'characters/bill_cipher/idle.png'}); }
 
-// --------------------
-// Glitch effect
-function runGlitchIntro(){
-  let flashes = 6, count = 0;
-  const interval = setInterval(()=>{
-    glitch.style.background = (count%2===0)?'white':'black';
-    count++;
-    if(count>flashes){ 
-      clearInterval(interval);
-      glitch.style.display='none';
-      showTitleScreen();
-    }
-  }, 80);
-}
-
-// Show title screen
-function showTitleScreen(){
-  titleScreen.style.display='flex';
-  setTimeout(()=>{
-    gameTitle.style.opacity=1;
-    startButton.style.opacity=1;
-  }, 100);
-}
-
 // Start button → character chooser
 startButton.addEventListener('click', ()=>{
-  titleScreen.style.display='none';
+  document.getElementById('titleOverlay').style.display='none';
+  titleCanvas.style.display='none';
   charChooser.style.display='flex';
   showCharacterChooser();
 });
@@ -143,6 +145,7 @@ function startGame(character){
     mario:{idle:'characters/mario/idle.png', walk1:'characters/mario/walk1.png', walk2:'characters/mario/walk2.png', jump:'characters/mario/jump.png'},
     bill:{idle:'characters/bill_cipher/idle.png', walk1:'characters/bill_cipher/walk1.png', walk2:'characters/bill_cipher/walk2.png', jump:'characters/bill_cipher/jump.png'}
   };
+
   const playerSprite = sprites[character];
   const idleImg = new Image(); idleImg.src = playerSprite.idle;
   const walk1Img = new Image(); walk1Img.src = playerSprite.walk1;
@@ -218,9 +221,6 @@ function startGame(character){
   function loop(){ update(); draw(); requestAnimationFrame(loop); }
   loop();
 }
-
-// Start glitch intro on load
-runGlitchIntro();
 </script>
 </body>
 </html>
