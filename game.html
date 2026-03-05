@@ -6,15 +6,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 body, html { margin:0; padding:0; overflow:hidden; font-family:'Press Start 2P', monospace; background:black; touch-action:none; }
-canvas{display:block;}
-#bgCanvas{ position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; }
-#gameCanvas{ position:absolute; top:0; left:0; z-index:2; }
-#titleOverlay, #charChooser{
+canvas{display:block; position:absolute; top:0; left:0;}
+#bgCanvas{ z-index:0; }
+#gameCanvas{ z-index:2; }
+#titleOverlay, #charChooser {
   position:absolute; top:0; left:0; width:100%; height:100%;
   display:flex; flex-direction:column; justify-content:center; align-items:center;
-  color:red; text-align:center; z-index:3; pointer-events:auto;
+  color:red; text-align:center; z-index:5;
 }
-#gameTitle{font-size:60px; text-shadow:0 0 10px black; margin-bottom:40px;}
+#gameTitle{ font-size:60px; text-shadow:0 0 10px black; margin-bottom:40px; }
 button{
   font-family:'Press Start 2P', monospace;
   font-size:18px;
@@ -34,7 +34,7 @@ button:hover{background:red;color:black;}
 
 /* Mobile controls */
 #mobileControls{
-  position:absolute; bottom:20px; width:100%; display:flex; justify-content:center; gap:20px; z-index:5; display:none;
+  position:absolute; bottom:20px; width:100%; display:flex; justify-content:center; gap:20px; z-index:6; display:none;
 }
 .mobileButton{
   width:60px; height:60px; border-radius:10px; background:rgba(255,0,0,0.4);
@@ -46,6 +46,7 @@ button:hover{background:red;color:black;}
 <body>
 
 <canvas id="bgCanvas"></canvas>
+<canvas id="gameCanvas"></canvas>
 
 <div id="titleOverlay">
   <div id="gameTitle">WEIRDMAGEDDON</div>
@@ -57,9 +58,6 @@ button:hover{background:red;color:black;}
   <div id="characters"></div>
 </div>
 
-<canvas id="gameCanvas"></canvas>
-
-<!-- Mobile controls -->
 <div id="mobileControls">
   <div id="leftBtn" class="mobileButton">&#8592;</div>
   <div id="jumpBtn" class="mobileButton">&#8593;</div>
@@ -72,7 +70,6 @@ const bgCanvas = document.getElementById("bgCanvas");
 const bgCtx = bgCanvas.getContext("2d");
 const gameCanvas = document.getElementById("gameCanvas");
 const ctx = gameCanvas.getContext("2d");
-
 function resizeCanvas(){
   bgCanvas.width = gameCanvas.width = window.innerWidth;
   bgCanvas.height = gameCanvas.height = window.innerHeight;
@@ -99,7 +96,7 @@ const charactersData = [
   {id:'villager', name:'Villager', folder:'characters/villager/', sprites:['idle','walk1','walk2','jump','crouch','damaged']},
   {id:'sonic', name:'Sonic', folder:'characters/sonic/', sprites:['idle','walk1','walk2','jump']},
   {id:'mario', name:'Mario', folder:'characters/mario/', sprites:['idle','walk1','walk2','jump']},
-  {id:'bill', name:'Bill Cipher', folder:'characters/bill_cipher/', sprites:['idle','walk1','walk2','jump']}
+  {id:'bill', name:'Bill', folder:'characters/bill_cipher/', sprites:['idle','walk1','walk2','jump']}
 ];
 
 // --- Load sprites
@@ -127,7 +124,7 @@ let keys = {};
 startButton.addEventListener("click", ()=>{
   titleOverlay.style.display="none";
   charChooser.style.display="flex";
-  autoScroll = true;
+  autoScroll=true;
   showCharacterChooser();
 });
 
@@ -144,7 +141,6 @@ function showCharacterChooser(){
       selectedChar = c;
       charChooser.style.display='none';
       autoScroll=false;
-      // Show mobile controls if mobile
       if(/Mobi|Android/i.test(navigator.userAgent)){
         mobileControls.style.display='flex';
       }
@@ -161,18 +157,17 @@ function startGame(char){
     velX:0, velY:0, speed:4, jumpPower:-12, jumping:true,
     character:char.id, damaged:false, damageTimer:0
   };
-  gameLoop();
+  requestAnimationFrame(gameLoop);
 }
 
 // --- Update
 let walkTimer=0;
 function update(){
-  // Keyboard controls
-  if(keys["ArrowRight"]||keys["d"]||keys["mobileRight"]) player.velX = player.speed;
-  else if(keys["ArrowLeft"]||keys["a"]||keys["mobileLeft"]) player.velX = -player.speed;
+  if(keys["ArrowRight"]||keys["d"]||keys.mobileRight) player.velX = player.speed;
+  else if(keys["ArrowLeft"]||keys["a"]||keys.mobileLeft) player.velX = -player.speed;
   else player.velX = 0;
 
-  if((keys[" "]||keys["w"]||keys["mobileJump"]) && !player.jumping){
+  if((keys[" "]||keys["w"]||keys.mobileJump) && !player.jumping){
     player.velY = player.jumpPower;
     player.jumping = true;
   }
@@ -188,7 +183,6 @@ function update(){
     player.jumping = false;
   }
 
-  // Damage test (press h)
   if(keys["h"] && !player.damaged){
     player.damaged = true;
     player.damageTimer = 30;
@@ -205,19 +199,14 @@ function update(){
 // --- Draw
 function draw(){
   ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
-
-  // Floor
   const floorY = gameCanvas.height - 64;
-  for(let x=0;x<5000;x+=64){
-    ctx.drawImage(floorImg, x-cameraX, floorY, 64, 64);
-  }
+  for(let x=0;x<5000;x+=64) ctx.drawImage(floorImg,x-cameraX,floorY,64,64);
 
-  // Player
   const charSprites = loadedSprites[player.character];
   let img;
   if(player.damaged) img = charSprites.damaged;
   else if(player.jumping) img = charSprites.jump;
-  else if(keys["ArrowLeft"]||keys["ArrowRight"]||keys["a"]||keys["d"]||keys["mobileLeft"]||keys["mobileRight"]){
+  else if(keys["ArrowLeft"]||keys["ArrowRight"]||keys["a"]||keys["d"]||keys.mobileLeft||keys.mobileRight){
     walkTimer++;
     img = (walkTimer%20<10)?charSprites.walk1:charSprites.walk2;
   } else img = charSprites.crouch || charSprites.idle;
@@ -225,18 +214,13 @@ function draw(){
 
   ctx.drawImage(img, player.x-cameraX, player.y, player.width, player.height);
 
-  // Background
+  // --- Background
   const imgHeight = bgCanvas.height;
-  const imgWidth = bgImage.width * (imgHeight/bgImage.height);
+  const imgWidth = bgImage.width*(imgHeight/bgImage.height);
   let drawX = autoScroll ? bgX : -cameraX*0.5;
   bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
-  for(let i=-imgWidth; i<bgCanvas.width+imgWidth; i+=imgWidth){
-    bgCtx.drawImage(bgImage, i+drawX, 0, imgWidth, imgHeight);
-  }
-  if(autoScroll){
-    bgX -= 0.2;
-    if(bgX <= -imgWidth) bgX = 0;
-  }
+  for(let i=-imgWidth; i<bgCanvas.width+imgWidth; i+=imgWidth) bgCtx.drawImage(bgImage,i+drawX,0,imgWidth,imgHeight);
+  if(autoScroll){ bgX-=0.2; if(bgX<=-imgWidth) bgX=0; }
 }
 
 // --- Game loop
@@ -251,10 +235,9 @@ document.addEventListener("keydown", e=>keys[e.key]=true);
 document.addEventListener("keyup", e=>keys[e.key]=false);
 
 // --- Mobile buttons
-const leftBtn = document.getElementById("leftBtn");
-const rightBtn = document.getElementById("rightBtn");
-const jumpBtn = document.getElementById("jumpBtn");
-
+const leftBtn=document.getElementById("leftBtn");
+const rightBtn=document.getElementById("rightBtn");
+const jumpBtn=document.getElementById("jumpBtn");
 [leftBtn,rightBtn,jumpBtn].forEach(btn=>{
   btn.addEventListener("touchstart", e=>{
     e.preventDefault();
