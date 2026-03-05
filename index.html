@@ -154,9 +154,9 @@ button:hover{
     <p>"If it survived the apocalypse, we sell it."</p>
 
     <div class="shop">
-      <div class="item" onclick="rickroll()">🪳 Roach Jerky – $12</div>
-      <div class="item" onclick="rickroll()">🔫 Rusted Revolver – $999</div>
-      <div class="item" onclick="rickroll()">👁️ Weird Amulet – $666</div>
+      <div class="item" onclick="playBuySound(); rickroll()">🪳 Roach Jerky – $12</div>
+      <div class="item" onclick="playBuySound(); rickroll()">🔫 Rusted Revolver – $999</div>
+      <div class="item" onclick="playBuySound(); rickroll()">👁️ Weird Amulet – $666</div>
     </div>
   </div>
 
@@ -172,10 +172,15 @@ button:hover{
 </div>
 
 <div id="overlay">Processing Transaction...</div>
+
+<!-- AUDIO ELEMENTS -->
 <audio id="glitchSound" src="glitch.mp3"></audio>
+<audio id="bgMusic" src="background.mp3" loop></audio>
+<audio id="buySound" src="cash.mp3"></audio>
+<audio id="secretSound" src="secret.mp3"></audio>
 
 <script>
-/* ---------- PAGE LOAD COUNTDOWN (3..2..1) ---------- */
+/* ---------- PAGE LOAD COUNTDOWN (3..2..1..GO!) ---------- */
 const countdownNumbers = ["3", "2", "1", "GO!"];
 let countIndex = 0;
 const countdownEl = document.getElementById("countdown");
@@ -192,12 +197,19 @@ function showCountdown(){
 
 function revealContent(){
   countdownEl.style.display="none";
+
   let flash=document.getElementById("flash");
   flash.style.opacity=1;
   setTimeout(()=>flash.style.opacity=0,300);
 
-  let sound=document.getElementById("glitchSound");
-  if(sound) sound.play();
+  let glitchSound = document.getElementById("glitchSound");
+  if(glitchSound) glitchSound.play();
+
+  // Start background music with fade in
+  const bgMusic = document.getElementById("bgMusic");
+  if(bgMusic){
+    fadeInMusic(bgMusic, 0.3, 0.01, 100);
+  }
 
   setTimeout(()=>{
     document.getElementById("content").style.display="block";
@@ -205,8 +217,26 @@ function revealContent(){
   },800);
 }
 
-/* Start countdown immediately */
 showCountdown();
+
+/* ---------- FADE IN MUSIC ---------- */
+function fadeInMusic(audio, targetVolume=0.3, step=0.01, interval=100){
+  audio.volume = 0;
+  audio.play();
+  const fade = setInterval(()=>{
+    if(audio.volume < targetVolume){
+      audio.volume = Math.min(audio.volume + step, targetVolume);
+    } else {
+      clearInterval(fade);
+    }
+  }, interval);
+}
+
+/* ---------- SHOP CLICK SOUND ---------- */
+function playBuySound(){
+  const buySound = document.getElementById("buySound");
+  if(buySound) buySound.play();
+}
 
 /* ---------- SHOP RICKROLL ---------- */
 function rickroll(){
@@ -222,6 +252,9 @@ function checkSecret(){
   let reveal=document.getElementById("secretReveal");
 
   if(code==="animalcrossing"){
+    const secretSound = document.getElementById("secretSound");
+    if(secretSound) secretSound.play();
+
     reveal.innerHTML=`
       <h3>Secret World Unlocked</h3>
       <canvas id="secretGame" width="600" height="400" 
@@ -232,15 +265,23 @@ function checkSecret(){
   }
 
   else if(code==="mario"){
+    const secretSound = document.getElementById("secretSound");
+    if(secretSound) secretSound.play();
     reveal.innerHTML="<img src='secret2.png' width='500'>";
   }
   else if(code==="blox"){
+    const secretSound = document.getElementById("secretSound");
+    if(secretSound) secretSound.play();
     reveal.innerHTML="<img src='secret3.png' width='500'>";
   }
   else if(code==="sonic"){
+    const secretSound = document.getElementById("secretSound");
+    if(secretSound) secretSound.play();
     reveal.innerHTML="<img src='secret4.png' width='500'>";
   }
   else if(code==="kong"){
+    const secretSound = document.getElementById("secretSound");
+    if(secretSound) secretSound.play();
     reveal.innerHTML="<img src='secret5.png' width='500'>";
   }
 
