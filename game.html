@@ -1,257 +1,258 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
-<title>Weirdmageddon: Apocalypse</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-<style>
-body, html { margin:0; padding:0; overflow:hidden; font-family:'Press Start 2P', monospace; background:black; touch-action:none; }
-canvas{display:block; position:absolute; top:0; left:0;}
-#bgCanvas{ z-index:0; }
-#gameCanvas{ z-index:2; }
-#titleOverlay, #charChooser {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
-  color:red; text-align:center; z-index:5;
-}
-#gameTitle{ font-size:60px; text-shadow:0 0 10px black; margin-bottom:40px; }
-button{
-  font-family:'Press Start 2P', monospace;
-  font-size:18px;
-  padding:15px 30px;
-  background:black;
-  color:red;
-  border:3px solid red;
-  cursor:pointer;
-  transition:0.2s;
-}
-button:hover{background:red;color:black;}
-#characters{display:flex; gap:40px; flex-wrap:wrap; justify-content:center;}
-.charCard{display:flex; flex-direction:column; align-items:center; cursor:pointer; border:3px solid red; padding:10px; transition:0.2s;}
-.charCard:hover{transform:scale(1.1); background:rgba(255,0,0,0.2);}
-.charCard img{width:100px; height:100px; object-fit:contain; margin-bottom:10px;}
-.charCard span{font-size:16px;}
+<title>Weirdmageddon Game</title>
 
-/* Mobile controls */
-#mobileControls{
-  position:absolute; bottom:20px; width:100%; display:flex; justify-content:center; gap:20px; z-index:6; display:none;
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+margin:0;
+overflow:hidden;
+background:black;
+font-family:'Press Start 2P', cursive;
+color:white;
 }
-.mobileButton{
-  width:60px; height:60px; border-radius:10px; background:rgba(255,0,0,0.4);
-  color:black; font-size:30px; display:flex; justify-content:center; align-items:center;
-  user-select:none; touch-action:none;
+
+/* canvas */
+
+canvas{
+position:absolute;
+top:0;
+left:0;
 }
+
+/* TITLE SCREEN */
+
+#titleOverlay{
+position:absolute;
+width:100%;
+height:100%;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+background:rgba(0,0,0,0.9);
+z-index:10;
+}
+
+#gameTitle{
+font-size:40px;
+color:red;
+margin-bottom:40px;
+text-shadow:0 0 20px red;
+}
+
+#startButton{
+padding:20px 40px;
+font-size:18px;
+background:black;
+color:red;
+border:3px solid red;
+cursor:pointer;
+}
+
+#startButton:hover{
+background:red;
+color:black;
+}
+
+/* CHARACTER CHOOSER */
+
+#charChooser{
+position:absolute;
+width:100%;
+height:100%;
+background:black;
+display:none;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+z-index:9;
+}
+
+#characters{
+display:flex;
+gap:40px;
+margin-top:30px;
+}
+
+.character{
+cursor:pointer;
+border:3px solid white;
+padding:10px;
+}
+
 </style>
 </head>
+
 <body>
 
 <canvas id="bgCanvas"></canvas>
 <canvas id="gameCanvas"></canvas>
 
 <div id="titleOverlay">
-  <div id="gameTitle">WEIRDMAGEDDON</div>
-  <button id="startButton">START</button>
+
+<div id="gameTitle">WEIRDMAGEDDON</div>
+
+<button id="startButton">START</button>
+
 </div>
 
-<div id="charChooser" style="display:none;">
-  <h2>Choose Your Character</h2>
-  <div id="characters"></div>
+<div id="charChooser">
+
+<h2>Select Character</h2>
+
+<div id="characters">
+
+<div class="character" id="villagerSelect">
+<img src="idle.png" width="80">
+<p>Villager</p>
 </div>
 
-<div id="mobileControls">
-  <div id="leftBtn" class="mobileButton">&#8592;</div>
-  <div id="jumpBtn" class="mobileButton">&#8593;</div>
-  <div id="rightBtn" class="mobileButton">&#8594;</div>
+</div>
+
 </div>
 
 <script>
-// --- Canvas setup
-const bgCanvas = document.getElementById("bgCanvas");
-const bgCtx = bgCanvas.getContext("2d");
-const gameCanvas = document.getElementById("gameCanvas");
-const ctx = gameCanvas.getContext("2d");
-function resizeCanvas(){
-  bgCanvas.width = gameCanvas.width = window.innerWidth;
-  bgCanvas.height = gameCanvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
 
-// --- Background
-const bgImage = new Image();
-bgImage.src = "8bitbg.png";
-let bgX = 0;
-let autoScroll = true;
+/* =====================
+CANVAS SETUP
+===================== */
 
-// --- UI elements
-const startButton = document.getElementById("startButton");
-const titleOverlay = document.getElementById("titleOverlay");
-const charChooser = document.getElementById("charChooser");
-const charactersDiv = document.getElementById("characters");
-const mobileControls = document.getElementById("mobileControls");
-let selectedChar = null;
+const bgCanvas = document.getElementById("bgCanvas")
+const bgCtx = bgCanvas.getContext("2d")
 
-// --- Characters
-const charactersData = [
-  {id:'villager', name:'Villager', folder:'characters/villager/', sprites:['idle','walk1','walk2','jump','crouch','damaged']},
-  {id:'sonic', name:'Sonic', folder:'characters/sonic/', sprites:['idle','walk1','walk2','jump']},
-  {id:'mario', name:'Mario', folder:'characters/mario/', sprites:['idle','walk1','walk2','jump']},
-  {id:'bill', name:'Bill', folder:'characters/bill_cipher/', sprites:['idle','walk1','walk2','jump']}
-];
+const gameCanvas = document.getElementById("gameCanvas")
+const ctx = gameCanvas.getContext("2d")
 
-// --- Load sprites
-const loadedSprites = {};
-charactersData.forEach(c=>{
-  loadedSprites[c.id] = {};
-  c.sprites.forEach(anim=>{
-    const img = new Image();
-    if(c.id==='villager') img.src = c.folder + anim + '.png';
-    else img.src = c.folder + c.id.charAt(0) + anim + '.png';
-    loadedSprites[c.id][anim] = img;
-  });
-});
+function resize(){
 
-// --- Floor
-const floorImg = new Image();
-floorImg.src = "floor.png";
+bgCanvas.width = window.innerWidth
+bgCanvas.height = window.innerHeight
 
-// --- Player
-let player, cameraX=0;
-const gravity = 0.6;
-let keys = {};
+gameCanvas.width = window.innerWidth
+gameCanvas.height = window.innerHeight
 
-// --- Start button
-startButton.addEventListener("click", ()=>{
-  titleOverlay.style.display="none";
-  charChooser.style.display="flex";
-  autoScroll=true;
-  showCharacterChooser();
-});
-
-// --- Character chooser
-function showCharacterChooser(){
-  charactersDiv.innerHTML='';
-  charactersData.forEach(c=>{
-    const card = document.createElement('div');
-    card.className='charCard';
-    const firstSprite = c.id==='villager'? 'idle.png' : c.id.charAt(0)+c.sprites[0]+'.png';
-    card.innerHTML=`<img src="${c.folder}${firstSprite}"><span>${c.name}</span>`;
-    charactersDiv.appendChild(card);
-    card.addEventListener('click', ()=>{
-      selectedChar = c;
-      charChooser.style.display='none';
-      autoScroll=false;
-      if(/Mobi|Android/i.test(navigator.userAgent)){
-        mobileControls.style.display='flex';
-      }
-      startGame(selectedChar);
-    });
-  });
 }
 
-// --- Start game
-function startGame(char){
-  player = {
-    x:100, y:gameCanvas.height-120,
-    width:50, height:60,
-    velX:0, velY:0, speed:4, jumpPower:-12, jumping:true,
-    character:char.id, damaged:false, damageTimer:0
-  };
-  requestAnimationFrame(gameLoop);
+window.addEventListener("resize",resize)
+resize()
+
+/* =====================
+BACKGROUND
+===================== */
+
+const bg = new Image()
+bg.src = "8bitbg.png"
+
+let bgX = 0
+
+function drawBackground(){
+
+bgX -= 0.3
+
+if(bgX <= -bgCanvas.width){
+bgX = 0
 }
 
-// --- Update
-let walkTimer=0;
-function update(){
-  if(keys["ArrowRight"]||keys["d"]||keys.mobileRight) player.velX = player.speed;
-  else if(keys["ArrowLeft"]||keys["a"]||keys.mobileLeft) player.velX = -player.speed;
-  else player.velX = 0;
+bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height)
 
-  if((keys[" "]||keys["w"]||keys.mobileJump) && !player.jumping){
-    player.velY = player.jumpPower;
-    player.jumping = true;
-  }
+bgCtx.drawImage(bg,bgX,0,bgCanvas.width,bgCanvas.height)
+bgCtx.drawImage(bg,bgX+bgCanvas.width,0,bgCanvas.width,bgCanvas.height)
 
-  player.velY += gravity;
-  player.x += player.velX;
-  player.y += player.velY;
-
-  const floorY = gameCanvas.height - 64;
-  if(player.y + player.height >= floorY){
-    player.y = floorY - player.height;
-    player.velY = 0;
-    player.jumping = false;
-  }
-
-  if(keys["h"] && !player.damaged){
-    player.damaged = true;
-    player.damageTimer = 30;
-  }
-  if(player.damaged){
-    player.damageTimer--;
-    if(player.damageTimer<=0) player.damaged=false;
-  }
-
-  cameraX = player.x - gameCanvas.width/2;
-  if(cameraX<0) cameraX=0;
 }
 
-// --- Draw
-function draw(){
-  ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
-  const floorY = gameCanvas.height - 64;
-  for(let x=0;x<5000;x+=64) ctx.drawImage(floorImg,x-cameraX,floorY,64,64);
+/* =====================
+PLAYER
+===================== */
 
-  const charSprites = loadedSprites[player.character];
-  let img;
-  if(player.damaged) img = charSprites.damaged;
-  else if(player.jumping) img = charSprites.jump;
-  else if(keys["ArrowLeft"]||keys["ArrowRight"]||keys["a"]||keys["d"]||keys.mobileLeft||keys.mobileRight){
-    walkTimer++;
-    img = (walkTimer%20<10)?charSprites.walk1:charSprites.walk2;
-  } else img = charSprites.crouch || charSprites.idle;
-  else img = charSprites.idle;
+const idle = new Image()
+idle.src = "idle.png"
 
-  ctx.drawImage(img, player.x-cameraX, player.y, player.width, player.height);
+let player = {
 
-  // --- Background
-  const imgHeight = bgCanvas.height;
-  const imgWidth = bgImage.width*(imgHeight/bgImage.height);
-  let drawX = autoScroll ? bgX : -cameraX*0.5;
-  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
-  for(let i=-imgWidth; i<bgCanvas.width+imgWidth; i+=imgWidth) bgCtx.drawImage(bgImage,i+drawX,0,imgWidth,imgHeight);
-  if(autoScroll){ bgX-=0.2; if(bgX<=-imgWidth) bgX=0; }
+x:200,
+y:200,
+width:64,
+height:64,
+vy:0,
+ground:false
+
 }
 
-// --- Game loop
+const gravity = 0.8
+const floorY = window.innerHeight - 120
+
+function updatePlayer(){
+
+player.vy += gravity
+player.y += player.vy
+
+if(player.y + player.height > floorY){
+
+player.y = floorY - player.height
+player.vy = 0
+player.ground = true
+
+}
+
+}
+
+function drawPlayer(){
+
+ctx.drawImage(idle,player.x,player.y,player.width,player.height)
+
+}
+
+/* =====================
+GAME LOOP
+===================== */
+
 function gameLoop(){
-  update();
-  draw();
-  requestAnimationFrame(gameLoop);
+
+drawBackground()
+
+ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height)
+
+updatePlayer()
+drawPlayer()
+
+requestAnimationFrame(gameLoop)
+
 }
 
-// --- Keyboard
-document.addEventListener("keydown", e=>keys[e.key]=true);
-document.addEventListener("keyup", e=>keys[e.key]=false);
+/* =====================
+START BUTTON FIX
+===================== */
 
-// --- Mobile buttons
-const leftBtn=document.getElementById("leftBtn");
-const rightBtn=document.getElementById("rightBtn");
-const jumpBtn=document.getElementById("jumpBtn");
-[leftBtn,rightBtn,jumpBtn].forEach(btn=>{
-  btn.addEventListener("touchstart", e=>{
-    e.preventDefault();
-    if(btn===leftBtn) keys.mobileLeft=true;
-    else if(btn===rightBtn) keys.mobileRight=true;
-    else if(btn===jumpBtn) keys.mobileJump=true;
-  });
-  btn.addEventListener("touchend", e=>{
-    e.preventDefault();
-    if(btn===leftBtn) keys.mobileLeft=false;
-    else if(btn===rightBtn) keys.mobileRight=false;
-    else if(btn===jumpBtn) keys.mobileJump=false;
-  });
-});
+const startButton = document.getElementById("startButton")
+const titleOverlay = document.getElementById("titleOverlay")
+const charChooser = document.getElementById("charChooser")
+
+startButton.addEventListener("click",function(){
+
+titleOverlay.style.display = "none"
+charChooser.style.display = "flex"
+
+})
+
+/* =====================
+CHARACTER SELECT
+===================== */
+
+document.getElementById("villagerSelect").addEventListener("click",function(){
+
+charChooser.style.display = "none"
+
+gameLoop()
+
+})
+
 </script>
+
 </body>
 </html>
