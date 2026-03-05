@@ -12,10 +12,7 @@ canvas{display:block;}
 #titleOverlay, #charChooser{
   position:absolute; top:0; left:0; width:100%; height:100%;
   display:flex; flex-direction:column; justify-content:center; align-items:center;
-  color:red; text-align:center;
-  font-family:'Press Start 2P', monospace;
-  z-index:3;
-  pointer-events:auto;
+  color:red; text-align:center; z-index:3; pointer-events:auto;
 }
 #gameTitle{font-size:60px; text-shadow:0 0 10px black; margin-bottom:40px;}
 button{
@@ -39,6 +36,7 @@ button:hover{background:red;color:black;}
 <body>
 
 <canvas id="bgCanvas"></canvas>
+
 <div id="titleOverlay">
   <div id="gameTitle">WEIRDMAGEDDON</div>
   <button id="startButton">START</button>
@@ -65,27 +63,13 @@ function resizeCanvas(){
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// --- Background
+// --- Background image
 const bgImage = new Image();
 bgImage.src = "8bitbg.png";
 let bgX = 0;
-let autoScroll = true; // slow scroll for title/chooser
+let autoScroll = true;
 
-function drawBackground(cameraX=0){
-  const imgHeight = bgCanvas.height;
-  const imgWidth = bgImage.width * (imgHeight/bgImage.height);
-  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
-  let drawX = autoScroll ? bgX : -cameraX*0.5;
-  for(let i=-imgWidth; i<bgCanvas.width+imgWidth; i+=imgWidth){
-    bgCtx.drawImage(bgImage, i+drawX, 0, imgWidth, imgHeight);
-  }
-  if(autoScroll){
-    bgX -= 0.2;
-    if(bgX <= -imgWidth) bgX = 0;
-  }
-}
-
-// --- UI
+// --- Title screen overlay
 const startButton = document.getElementById("startButton");
 const titleOverlay = document.getElementById("titleOverlay");
 const charChooser = document.getElementById("charChooser");
@@ -97,13 +81,26 @@ const charactersData = [
   {id:'villager', name:'Villager', folder:'characters/villager/', sprites:['idle','walk1','walk2','jump','crouch','damaged']},
   {id:'sonic', name:'Sonic', folder:'characters/sonic/', sprites:['idle','walk1','walk2','jump']},
   {id:'mario', name:'Mario', folder:'characters/mario/', sprites:['idle','walk1','walk2','jump']},
-  {id:'bill', name:'Bill', folder:'characters/bill_cipher/', sprites:['idle','walk1','walk2','jump']}
+  {id:'bill', name:'Bill Cipher', folder:'characters/bill_cipher/', sprites:['idle','walk1','walk2','jump']}
 ];
 
-// --- Start button
+// --- Load sprites
+const loadedSprites = {};
+charactersData.forEach(c=>{
+  loadedSprites[c.id]={};
+  c.sprites.forEach(anim=>{
+    const img = new Image();
+    if(c.id==='villager') img.src = c.folder+anim+'.png';
+    else img.src = c.folder+c.id.charAt(0)+anim+'.png'; // e.g., swalk1.png
+    loadedSprites[c.id][anim] = img;
+  });
+});
+
+// --- Start button click
 startButton.addEventListener("click", ()=>{
   titleOverlay.style.display="none";
   charChooser.style.display="flex";
+  autoScroll = true; // keep background moving slowly for chooser
   showCharacterChooser();
 });
 
@@ -113,11 +110,8 @@ function showCharacterChooser(){
   charactersData.forEach(c=>{
     const card = document.createElement('div');
     card.className='charCard';
-    card.dataset.character = c.id;
-    // show first sprite as preview
-    const previewSprite = c.id==='villager'? 'idle' : c.sprites[0];
-    const previewImg = c.id==='villager'? 'idle.png' : c.sprites[0]+'.png';
-    card.innerHTML=`<img src="${c.folder}${previewImg}"><span>${c.name}</span>`;
+    const firstSprite = c.id==='villager'? 'idle.png' : c.id.charAt(0)+c.sprites[0]+'.png';
+    card.innerHTML=`<img src="${c.folder}${firstSprite}"><span>${c.name}</span>`;
     charactersDiv.appendChild(card);
     card.addEventListener('click', ()=>{
       selectedChar = c;
@@ -128,27 +122,16 @@ function showCharacterChooser(){
   });
 }
 
-// --- Game setup
+// --- Floor
 const floorImg = new Image();
 floorImg.src = "floor.png";
-let player, cameraX=0;
+
+// --- Player and camera
+let player, cameraX = 0;
 const gravity = 0.6;
-let keys={};
+let keys = {};
 document.addEventListener("keydown", e=>keys[e.key]=true);
 document.addEventListener("keyup", e=>keys[e.key]=false);
-
-// --- Load sprites
-const loadedSprites = {};
-charactersData.forEach(c=>{
-  loadedSprites[c.id]={};
-  c.sprites.forEach(anim=>{
-    const img = new Image();
-    // Villager uses full name, others use initial prefix
-    if(c.id==='villager') img.src = c.folder+anim+'.png';
-    else img.src = c.folder[c.id.charAt(0)]+anim+'.png'; // e.g., swalk1.png
-    loadedSprites[c.id][anim] = img;
-  });
-});
 
 // --- Start game
 function startGame(char){
@@ -201,11 +184,13 @@ function update(){
 function draw(){
   ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
 
+  // Draw floor
   const floorY = gameCanvas.height - 64;
   for(let x=0;x<5000;x+=64){
     ctx.drawImage(floorImg, x-cameraX, floorY, 64, 64);
   }
 
+  // Draw player
   const charSprites = loadedSprites[player.character];
   let img;
   if(player.damaged) img = charSprites.damaged;
@@ -218,7 +203,18 @@ function draw(){
 
   ctx.drawImage(img, player.x-cameraX, player.y, player.width, player.height);
 
-  drawBackground(cameraX);
+  // Draw background
+  const imgHeight = bgCanvas.height;
+  const imgWidth = bgImage.width * (imgHeight/bgImage.height);
+  let drawX = autoScroll ? bgX : -cameraX*0.5;
+  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+  for(let i=-imgWidth; i<bgCanvas.width+imgWidth; i+=imgWidth){
+    bgCtx.drawImage(bgImage, i+drawX, 0, imgWidth, imgHeight);
+  }
+  if(autoScroll){
+    bgX -= 0.2;
+    if(bgX <= -imgWidth) bgX = 0;
+  }
 }
 
 // --- Game loop
