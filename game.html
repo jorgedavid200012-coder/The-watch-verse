@@ -3,71 +3,139 @@
 <head>
 <meta charset="UTF-8">
 <title>Weirdmageddon: Apocalypse</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-body, html { margin:0; padding:0; overflow:hidden; font-family:Arial, Helvetica, sans-serif; background:black; }
-#titleScreen{
-position:absolute;width:100%;height:100%;
-display:flex;flex-direction:column;align-items:center;justify-content:center;
-background:url("8bitbg.png") center/cover no-repeat;
-color:white;text-align:center;
+body, html { margin:0; padding:0; overflow:hidden; font-family:'Press Start 2P', monospace; background:black; }
+canvas{display:block;}
+#titleOverlay, #charChooser{
+  position:absolute;top:0;left:0;width:100%;height:100%;display:flex;
+  justify-content:center;align-items:center;flex-direction:column;
+  color:red;text-align:center;
+  z-index:1;
+  font-family:'Press Start 2P', monospace;
 }
-#titleScreen h1{font-size:60px;margin-bottom:20px;text-shadow:0 0 15px red;}
-#startBtn{padding:15px 40px;font-size:20px;cursor:pointer;}
-
-#characterSelect{
-position:absolute;width:100%;height:100%;display:none;
-background:black;color:white;text-align:center;padding-top:120px;
+#gameTitle{font-size:60px;text-shadow:0 0 10px black;margin-bottom:40px;}
+button{
+  font-family:'Press Start 2P', monospace;
+  font-size:18px;
+  padding:15px 30px;
+  background:black;
+  color:red;
+  border:3px solid red;
+  cursor:pointer;
+  transition:0.2s;
 }
-.charBtn{padding:15px 25px;margin:10px;font-size:18px;cursor:pointer;}
-
-#gameCanvas{display:none;background:#87CEEB;image-rendering:pixelated;}
+button:hover{background:red;color:black;}
+#characters{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;}
+.charCard{display:flex;flex-direction:column;align-items:center;cursor:pointer;border:3px solid red;padding:10px;transition:0.2s;}
+.charCard:hover{transform:scale(1.1);background:rgba(255,0,0,0.2);}
+.charCard img{width:100px;height:100px;object-fit:contain;margin-bottom:10px;}
+.charCard span{font-size:16px;}
 </style>
 </head>
 <body>
 
-<!-- TITLE SCREEN -->
-<div id="titleScreen">
-<h1>Weirdmageddon</h1>
-<button id="startBtn">Start Game</button>
+<!-- Canvas for moving background -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- Title overlay -->
+<div id="titleOverlay">
+  <div id="gameTitle">WEIRDMAGEDDON</div>
+  <button id="startButton">START</button>
 </div>
 
-<!-- CHARACTER SELECT -->
-<div id="characterSelect">
-<h2>Choose Character</h2>
-<button class="charBtn" onclick="startGame('villager')">Villager</button>
-<button class="charBtn" onclick="startGame('sonic')">Sonic</button>
-<button class="charBtn" onclick="startGame('mario')">Mario</button>
+<!-- Character chooser overlay -->
+<div id="charChooser" style="display:none;">
+  <h2>Choose Your Character</h2>
+  <div id="characters"></div>
 </div>
-
-<canvas id="gameCanvas"></canvas>
 
 <script>
-const canvas=document.getElementById("gameCanvas");
-const ctx=canvas.getContext("2d");
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
+// --------------------
+// Background canvas
+const bgCanvas = document.getElementById("bgCanvas");
+const bgCtx = bgCanvas.getContext("2d");
+let bgImage = new Image();
+bgImage.src = "8bitbg.png";
+let bgX = 0;
+function resizeCanvas(){
+  bgCanvas.width = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
 
-let keys={};
-document.addEventListener("keydown",e=>keys[e.key]=true);
-document.addEventListener("keyup",e=>keys[e.key]=false);
+// --------------------
+// Moving background draw
+function drawBackground(){
+  const imgHeight = bgCanvas.height;
+  const imgWidth = bgImage.width * (imgHeight/bgImage.height);
+  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+  for(let i=-imgWidth;i<bgCanvas.width+imgWidth;i+=imgWidth){
+    bgCtx.drawImage(bgImage,i+bgX,0,imgWidth,imgHeight);
+  }
+  bgX -= 0.3;
+  if(bgX <= -imgWidth) bgX = 0;
+  requestAnimationFrame(drawBackground);
+}
+bgImage.onload = ()=>{ drawBackground(); };
 
-/* UI Screens */
-document.getElementById("startBtn").onclick=()=>{
-  document.getElementById("titleScreen").style.display="none";
-  document.getElementById("characterSelect").style.display="block";
-};
+// --------------------
+// UI logic
+const startButton = document.getElementById("startButton");
+const titleOverlay = document.getElementById("titleOverlay");
+const charChooser = document.getElementById("charChooser");
+const charactersDiv = document.getElementById("characters");
+
+let selectedChar = null;
+
+const charactersData = [
+  {id:'villager', name:'Villager', img:'characters/villager/idle.png'}
+];
+
+startButton.addEventListener("click",()=>{
+  titleOverlay.style.display="none";
+  charChooser.style.display="flex";
+  showCharacterChooser();
+});
+
+function showCharacterChooser(){
+  charactersDiv.innerHTML='';
+  charactersData.forEach(c=>{
+    const card = document.createElement('div');
+    card.className = 'charCard';
+    card.dataset.character = c.id;
+    card.innerHTML=`<img src="${c.img}"><span>${c.name}</span>`;
+    charactersDiv.appendChild(card);
+    card.addEventListener('click', ()=>{
+      selectedChar = c.id;
+      charChooser.style.display='none';
+      startGame(selectedChar);
+    });
+  });
+}
+
+// --------------------
+// Game setup
+const gameCanvas = document.createElement("canvas");
+const ctx = gameCanvas.getContext("2d");
+document.body.appendChild(gameCanvas);
+gameCanvas.style.position="absolute";
+gameCanvas.style.top=0;
+gameCanvas.style.left=0;
+gameCanvas.style.zIndex=2;
+gameCanvas.width = window.innerWidth;
+gameCanvas.height = window.innerHeight;
+
+const floorImg = new Image();
+floorImg.src = "floor.png";
 
 let player;
 let cameraX=0;
 const gravity=0.6;
 
-/* Floor */
-const floorImg=new Image();
-floorImg.src="floor.png";
-const floor={x:0, y:0, width:5000, height:64};
-
-/* SPRITES */
-const spritePaths={
+// Villager sprites
+const sprites = {
   villager:{
     idle:"characters/villager/idle.png",
     walk1:"characters/villager/walk1.png",
@@ -77,27 +145,27 @@ const spritePaths={
     damaged:"characters/villager/damaged.png"
   }
 };
-
-/* Load images */
-const sprites={};
-for(const char in spritePaths){
-  sprites[char]={};
-  for(const anim in spritePaths[char]){
-    const img=new Image();
-    img.src=spritePaths[char][anim];
-    sprites[char][anim]=img;
+const loadedSprites={};
+for(const char in sprites){
+  loadedSprites[char]={};
+  for(const anim in sprites[char]){
+    const img = new Image();
+    img.src = sprites[char][anim];
+    loadedSprites[char][anim]=img;
   }
 }
 
-/* Start game */
-function startGame(character){
-  document.getElementById("characterSelect").style.display="none";
-  canvas.style.display="block";
-  floor.y=canvas.height-floor.height;
+// Keys
+let keys = {};
+document.addEventListener("keydown",e=>keys[e.key]=true);
+document.addEventListener("keyup",e=>keys[e.key]=false);
 
+// --------------------
+// Start game
+function startGame(character){
   player={
     x:100,
-    y:floor.y-60,
+    y:gameCanvas.height-120,
     width:50,
     height:60,
     velX:0,
@@ -109,84 +177,81 @@ function startGame(character){
     damaged:false,
     damageTimer:0
   };
-
   gameLoop();
 }
 
-/* Update */
+// --------------------
+// Update
+let walkTimer=0;
 function update(){
-  // movement
   if(keys["ArrowRight"]||keys["d"]) player.velX=player.speed;
   else if(keys["ArrowLeft"]||keys["a"]) player.velX=-player.speed;
   else player.velX=0;
 
-  // jump
   if((keys[" "]||keys["w"])&&!player.jumping){
     player.velY=player.jumpPower;
     player.jumping=true;
   }
 
-  // gravity
-  player.velY+=gravity;
-  player.x+=player.velX;
-  player.y+=player.velY;
+  player.velY += gravity;
+  player.x += player.velX;
+  player.y += player.velY;
 
   // floor collision
-  if(player.y+player.height>=floor.y){
-    player.y=floor.y-player.height;
-    player.velY=0;
+  const floorY = gameCanvas.height - 64;
+  if(player.y + player.height >= floorY){
+    player.y = floorY - player.height;
+    player.velY = 0;
     player.jumping=false;
   }
 
-  // simulate damage key H
+  // simulate damage
   if(keys["h"] && !player.damaged){
     player.damaged=true;
-    player.damageTimer=30; // frames to show damaged sprite
+    player.damageTimer=30;
   }
-
   if(player.damaged){
     player.damageTimer--;
     if(player.damageTimer<=0) player.damaged=false;
   }
 
   // camera
-  cameraX=player.x-canvas.width/2;
+  cameraX = player.x - gameCanvas.width/2;
   if(cameraX<0) cameraX=0;
 }
 
-/* Draw */
-let walkTimer=0;
+// --------------------
+// Draw
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height);
 
   // draw floor
-  for(let x=0;x<floor.width;x+=floor.height){
-    ctx.drawImage(floorImg,floor.x+x-cameraX,floor.y,floor.height,floor.height);
+  const floorY = gameCanvas.height-64;
+  for(let x=0;x<5000;x+=64){
+    ctx.drawImage(floorImg,x-cameraX,floorY,64,64);
   }
 
-  // determine player sprite
+  // draw player sprite
+  const charSprites = loadedSprites[player.character];
   let img;
-  const charSprites=sprites[player.character];
-
-  if(player.damaged) img=charSprites.damaged;
-  else if(player.jumping) img=charSprites.jump;
+  if(player.damaged) img = charSprites.damaged;
+  else if(player.jumping) img = charSprites.jump;
   else if(keys["ArrowLeft"]||keys["ArrowRight"]||keys["a"]||keys["d"]){
     walkTimer++;
     img=(walkTimer%20<10)?charSprites.walk1:charSprites.walk2;
-  }
-  else if(keys["s"]) img=charSprites.crouch; // crouch
+  } else if(keys["s"]) img=charSprites.crouch;
   else img=charSprites.idle;
 
   ctx.drawImage(img,player.x-cameraX,player.y,player.width,player.height);
 }
 
-/* Loop */
+// --------------------
+// Game loop
 function gameLoop(){
   update();
   draw();
   requestAnimationFrame(gameLoop);
 }
-
 </script>
 </body>
 </html>
