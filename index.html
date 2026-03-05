@@ -117,13 +117,14 @@ button:hover{background:red; color:black;}
 
 /* SHOP */
 .shop-container {
-  background:rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.8); /* visible but blending */
   padding:40px;
   border-radius:20px;
   margin-top:40px;
   text-align:center;
   position:relative;
-  z-index:1; /* above background video */
+  z-index:1; /* above video */
+  border:2px solid red; /* optional outline */
 }
 .shop {
   display:flex;
@@ -306,8 +307,18 @@ logo.addEventListener('click', () => {
   logoClickCount++;
   if(logoClickCount === 5){
     window.location.href = "https://youtu.be/-RbkipgjqlU?si=fYy6WQl1PBP0ZwqY";
-  } else if(logoClickCount === 10){
-    showErrorVideo();
+  }
+});
+
+// ERROR VIDEO ON 20 PAGE CLICKS (excluding buttons/inputs/videos)
+let pageClickCount = 0;
+document.addEventListener('click', function(e){
+  if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'VIDEO'){
+    pageClickCount++;
+    if(pageClickCount === 20){
+      showErrorVideo();
+      pageClickCount = 0; // reset after error
+    }
   }
 });
 
