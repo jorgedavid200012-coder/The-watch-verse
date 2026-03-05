@@ -34,7 +34,7 @@ body{
   width:100%;
   min-height:100vh;
   overflow:hidden;
-  display:none; /* hidden until countdown ends */
+  display:none;
 }
 
 /* background video filling entire hero + content */
@@ -117,14 +117,17 @@ button:hover{background:red; color:black;}
 
 /* SHOP */
 .shop-container {
-  background: rgba(0,0,0,0.8); /* visible but blending */
+  background: url('shopbg.png') no-repeat center center;
+  background-size: cover;
+  background-blend-mode: multiply;
+  background-color: rgba(0,0,0,0.6);
   padding:40px;
   border-radius:20px;
   margin-top:40px;
   text-align:center;
   position:relative;
-  z-index:1; /* above video */
-  border:2px solid red; /* optional outline */
+  z-index:1;
+  border:2px solid red;
 }
 .shop {
   display:flex;
@@ -171,14 +174,10 @@ button:hover{background:red; color:black;}
 
 <body>
 
-<!-- Start overlay -->
 <div id="startOverlay">START</div>
-
-<!-- Countdown and flash -->
 <div id="countdown"></div>
 <div id="flash"></div>
 
-<!-- HERO SECTION -->
 <div id="heroSection">
   <video id="heroBg" autoplay muted loop>
     <source src="backgroundVideo.mp4" type="video/mp4">
@@ -188,7 +187,6 @@ button:hover{background:red; color:black;}
     <h1>WEIRDMAGEDDON</h1>
     <img id="logo" src="logo.png">
 
-    <!-- Trailer -->
     <div id="trailerContainer" style="margin-top:20px;">
       <video width="700" controls>
         <source src="trailer.mp4" type="video/mp4">
@@ -222,13 +220,11 @@ button:hover{background:red; color:black;}
 
 <div id="overlay">Processing Transaction...</div>
 
-<!-- AUDIO -->
 <audio id="glitchSound" src="glitch.mp3"></audio>
 <audio id="bgMusic" src="background.mp3" loop></audio>
 <audio id="buySound" src="cash.mp3"></audio>
 <audio id="secretSound" src="secret.mp3"></audio>
 
-<!-- ERROR VIDEO (hidden initially) -->
 <video id="errorVideo" src="error.mp4" style="display:none;"></video>
 
 <script>
@@ -310,14 +306,14 @@ logo.addEventListener('click', () => {
   }
 });
 
-// ERROR VIDEO ON 20 PAGE CLICKS (excluding buttons/inputs/videos)
+// ERROR VIDEO ON 20 PAGE CLICKS
 let pageClickCount = 0;
 document.addEventListener('click', function(e){
   if(e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'VIDEO'){
     pageClickCount++;
     if(pageClickCount === 20){
       showErrorVideo();
-      pageClickCount = 0; // reset after error
+      pageClickCount = 0;
     }
   }
 });
