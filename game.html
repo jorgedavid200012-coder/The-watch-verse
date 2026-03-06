@@ -4,8 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Watch Verse</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -75,40 +74,56 @@ image-rendering:pixelated;
 
 #mobileControls{
 
-position:absolute;
+position:fixed;
 bottom:20px;
 left:0;
 width:100%;
-
 display:none;
-
 justify-content:space-between;
-
-padding:20px;
-
+pointer-events:none;
 z-index:20;
 
 }
 
 .ctrlGroup{
 display:flex;
-gap:15px;
+gap:10px;
+pointer-events:auto;
+padding:20px;
 }
 
 .ctrlBtn{
 
 width:70px;
 height:70px;
-
-font-size:22px;
-
-border:3px solid white;
-
 background:black;
+border:4px solid white;
 color:white;
 
-font-family:'Press Start 2P';
+display:flex;
+align-items:center;
+justify-content:center;
 
+font-family:'Press Start 2P';
+font-size:18px;
+
+image-rendering:pixelated;
+
+}
+
+/* pixel arrows */
+
+.pixelArrow{
+display:grid;
+grid-template-columns:repeat(5,6px);
+grid-template-rows:repeat(5,6px);
+gap:1px;
+}
+
+.pixel{
+width:6px;
+height:6px;
+background:white;
 }
 
 </style>
@@ -158,29 +173,46 @@ font-family:'Press Start 2P';
 <canvas id="game"></canvas>
 
 
-
 <!-- MOBILE CONTROLS -->
 
 <div id="mobileControls">
 
 <div class="ctrlGroup">
 
-<button class="ctrlBtn" id="left">◀</button>
+<div class="ctrlBtn" id="left">
 
-<button class="ctrlBtn" id="right">▶</button>
+<div class="pixelArrow">
+<div></div><div class="pixel"></div><div></div><div></div><div></div>
+<div class="pixel"></div><div class="pixel"></div><div></div><div></div><div></div>
+<div class="pixel"></div><div class="pixel"></div><div class="pixel"></div><div></div><div></div>
+<div class="pixel"></div><div class="pixel"></div><div></div><div></div><div></div>
+<div></div><div class="pixel"></div><div></div><div></div><div></div>
+</div>
+
+</div>
+
+<div class="ctrlBtn" id="right">
+
+<div class="pixelArrow">
+<div></div><div class="pixel"></div><div></div><div></div><div></div>
+<div></div><div></div><div class="pixel"></div><div class="pixel"></div><div></div>
+<div></div><div></div><div class="pixel"></div><div class="pixel"></div><div class="pixel"></div>
+<div></div><div></div><div class="pixel"></div><div class="pixel"></div><div></div>
+<div></div><div class="pixel"></div><div></div><div></div><div></div>
+</div>
+
+</div>
 
 </div>
 
 <div class="ctrlGroup">
 
-<button class="ctrlBtn" id="jump">▲</button>
-
-<button class="ctrlBtn" id="down">▼</button>
-
-</div>
+<div class="ctrlBtn" id="jump">▲</div>
+<div class="ctrlBtn" id="crouch">▼</div>
 
 </div>
 
+</div>
 
 
 <script>
@@ -290,11 +322,9 @@ document.getElementById("mobileControls").style.display="flex"
 
 
 
-/* MOBILE BUTTON BINDING */
+/* MOBILE INPUT */
 
-function bindButton(id,key){
-
-const btn = document.getElementById(id)
+function bind(btn,key){
 
 btn.addEventListener("touchstart",e=>{
 e.preventDefault()
@@ -308,14 +338,10 @@ keys[key]=false
 
 }
 
-
-
-/* CONNECT BUTTONS */
-
-bindButton("left","arrowleft")
-bindButton("right","arrowright")
-bindButton("jump"," ")
-bindButton("down","arrowdown")
+bind(document.getElementById("left"),"arrowleft")
+bind(document.getElementById("right"),"arrowright")
+bind(document.getElementById("jump")," ")
+bind(document.getElementById("crouch"),"arrowdown")
 
 
 
@@ -363,8 +389,6 @@ damaged:new Image()
 
 }
 
-/* Villigear has NO prefix */
-
 if(character==="villigear"){
 
 sprites.idle.src="idle.png"
@@ -375,8 +399,6 @@ sprites.crouch.src="crouch.png"
 sprites.damaged.src="damaged.png"
 
 }
-
-/* Other characters */
 
 else{
 
@@ -399,26 +421,26 @@ function update(){
 
 let s = stats[character]
 
+/* mobile speed boost so it feels same as keyboard */
+
+let speedBoost = isMobile ? 1.35 : 1
+
 if(keys["arrowright"] || keys["d"]){
 
-player.vx += s.speed
+player.vx += s.speed * speedBoost
 player.dir = 1
 
 }
 
 if(keys["arrowleft"] || keys["a"]){
 
-player.vx -= s.speed
+player.vx -= s.speed * speedBoost
 player.dir = -1
 
 }
 
-/* slippery movement */
-
 player.vx *= 0.9
 
-
-/* jump */
 
 if((keys[" "] || keys["arrowup"]) && player.ground){
 
@@ -427,16 +449,11 @@ player.ground = false
 
 }
 
-
-/* gravity */
-
 player.vy += 0.8
 
 player.x += player.vx
 player.y += player.vy
 
-
-/* GROUND */
 
 let ground = canvas.height - 40
 
@@ -447,9 +464,6 @@ player.vy = 0
 player.ground = true
 
 }
-
-
-/* camera */
 
 cameraX = player.x - canvas.width/2
 
@@ -577,9 +591,7 @@ drawBackground()
 if(state==="game"){
 
 update()
-
 drawFloor()
-
 drawPlayer()
 
 }
