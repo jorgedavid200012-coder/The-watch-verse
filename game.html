@@ -3,7 +3,7 @@
 
 <head>
 <meta charset="UTF-8">
-<title>Weirdmageddon Game</title>
+<title>Weirdmageddon</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
@@ -16,8 +16,6 @@ background:black;
 font-family:'Press Start 2P', cursive;
 color:white;
 }
-
-/* canvas */
 
 canvas{
 position:absolute;
@@ -35,7 +33,7 @@ display:flex;
 flex-direction:column;
 justify-content:center;
 align-items:center;
-background:rgba(0,0,0,0.9);
+background:rgba(0,0,0,0.6);
 z-index:10;
 }
 
@@ -55,22 +53,17 @@ border:3px solid red;
 cursor:pointer;
 }
 
-#startButton:hover{
-background:red;
-color:black;
-}
-
-/* CHARACTER CHOOSER */
+/* CHARACTER SELECT */
 
 #charChooser{
 position:absolute;
 width:100%;
 height:100%;
-background:black;
 display:none;
 flex-direction:column;
 justify-content:center;
 align-items:center;
+background:rgba(0,0,0,0.6);
 z-index:9;
 }
 
@@ -143,11 +136,21 @@ window.addEventListener("resize",resize)
 resize()
 
 /* =====================
-BACKGROUND
+IMAGES
 ===================== */
 
 const bg = new Image()
 bg.src = "8bitbg.png"
+
+const floorImg = new Image()
+floorImg.src = "floor.png"
+
+const idle = new Image()
+idle.src = "idle.png"
+
+/* =====================
+BACKGROUND
+===================== */
 
 let bgX = 0
 
@@ -170,24 +173,67 @@ bgCtx.drawImage(bg,bgX+bgCanvas.width,0,bgCanvas.width,bgCanvas.height)
 PLAYER
 ===================== */
 
-const idle = new Image()
-idle.src = "idle.png"
-
 let player = {
 
 x:200,
 y:200,
 width:64,
 height:64,
+vx:0,
 vy:0,
 ground:false
 
 }
 
 const gravity = 0.8
-const floorY = window.innerHeight - 120
+const floorY = window.innerHeight - 100
+
+/* =====================
+INPUT
+===================== */
+
+let keys = {}
+
+document.addEventListener("keydown",e=>{
+
+keys[e.key.toLowerCase()] = true
+
+})
+
+document.addEventListener("keyup",e=>{
+
+keys[e.key.toLowerCase()] = false
+
+})
+
+/* =====================
+PLAYER UPDATE
+===================== */
 
 function updatePlayer(){
+
+player.vx = 0
+
+if(keys["a"] || keys["arrowleft"]){
+
+player.vx = -5
+
+}
+
+if(keys["d"] || keys["arrowright"]){
+
+player.vx = 5
+
+}
+
+if((keys["w"] || keys[" "] || keys["arrowup"]) && player.ground){
+
+player.vy = -15
+player.ground = false
+
+}
+
+player.x += player.vx
 
 player.vy += gravity
 player.y += player.vy
@@ -201,6 +247,24 @@ player.ground = true
 }
 
 }
+
+/* =====================
+DRAW FLOOR
+===================== */
+
+function drawFloor(){
+
+for(let i=0;i<gameCanvas.width;i+=64){
+
+ctx.drawImage(floorImg,i,floorY,64,64)
+
+}
+
+}
+
+/* =====================
+DRAW PLAYER
+===================== */
 
 function drawPlayer(){
 
@@ -218,6 +282,7 @@ drawBackground()
 
 ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height)
 
+drawFloor()
 updatePlayer()
 drawPlayer()
 
@@ -226,31 +291,45 @@ requestAnimationFrame(gameLoop)
 }
 
 /* =====================
-START BUTTON FIX
+BACKGROUND LOOP (MENU)
+===================== */
+
+function menuLoop(){
+
+drawBackground()
+
+requestAnimationFrame(menuLoop)
+
+}
+
+menuLoop()
+
+/* =====================
+START BUTTON
 ===================== */
 
 const startButton = document.getElementById("startButton")
 const titleOverlay = document.getElementById("titleOverlay")
 const charChooser = document.getElementById("charChooser")
 
-startButton.addEventListener("click",function(){
+startButton.onclick = ()=>{
 
 titleOverlay.style.display = "none"
 charChooser.style.display = "flex"
 
-})
+}
 
 /* =====================
 CHARACTER SELECT
 ===================== */
 
-document.getElementById("villagerSelect").addEventListener("click",function(){
+document.getElementById("villagerSelect").onclick = ()=>{
 
 charChooser.style.display = "none"
 
 gameLoop()
 
-})
+}
 
 </script>
 
