@@ -2,7 +2,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
+
 <title>Watch Verse</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
 <style>
 
@@ -10,345 +13,371 @@ body{
 margin:0;
 overflow:hidden;
 background:black;
+font-family:'Press Start 2P',cursive;
+color:white;
 }
 
 canvas{
-display:block;
+position:absolute;
+top:0;
+left:0;
 image-rendering:pixelated;
 }
 
-</style>
+#ui{
+position:absolute;
+width:100%;
+height:100%;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+z-index:2;
+}
 
+button{
+
+font-family:'Press Start 2P';
+padding:20px;
+margin:10px;
+font-size:14px;
+
+background:black;
+color:white;
+border:3px solid white;
+
+cursor:pointer;
+
+}
+
+button:hover{
+background:white;
+color:black;
+}
+
+</style>
 </head>
 
 <body>
+
+<div id="ui">
+
+<h1>WATCH VERSE</h1>
+
+<div id="menu">
+
+<button onclick="startSelect()">START</button>
+
+</div>
+
+<div id="select" style="display:none">
+
+<h2>Choose Character</h2>
+
+<button onclick="choose('villigear')">VILLIGEAR</button>
+<button onclick="choose('sonic')">SONIC</button>
+<button onclick="choose('mario')">MARIO</button>
+
+</div>
+
+</div>
 
 <canvas id="game"></canvas>
 
 <script>
 
-/* =========================
-CANVAS
-========================= */
+/* ---------- CANVAS ---------- */
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game")
+const ctx=canvas.getContext("2d")
 
 function resize(){
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight
+
 }
-resize();
-window.addEventListener("resize",resize);
+
+resize()
+window.addEventListener("resize",resize)
 
 
+/* ---------- GAME STATE ---------- */
 
-/* =========================
-CHARACTER SELECTION
-========================= */
-
-let character = localStorage.getItem("character") || "villigear";
+let state="menu"
 
 
+/* ---------- CHARACTER ---------- */
 
-/* =========================
-LOAD IMAGES
-========================= */
+let character="villigear"
+
+
+/* ---------- LOAD IMAGE ---------- */
 
 function load(src){
-let img = new Image();
-img.src = src;
-return img;
+
+let img=new Image()
+img.src=src
+return img
+
 }
 
-const sprites = {
-
-idle: load(character+"idle.png"),
-walk1: load(character+"walk1.png"),
-walk2: load(character+"walk2.png"),
-jump: load(character+"jump.png"),
-crouch: load(character+"crouch.png")
-
-};
-
-const background = load("8bitbg.png");
-const floor = load("floor.png");
+const bg=load("8bitbg.png")
+const floor=load("floor.png")
 
 
+/* ---------- PLAYER ---------- */
 
-/* =========================
-CHARACTER STATS
-========================= */
-
-const stats = {
-
-villigear:{speed:4,jump:16},
-sonic:{speed:7,jump:14},
-mario:{speed:4,jump:20},
-bill:{speed:4,jump:16,hover:true}
-
-};
-
-
-
-/* =========================
-PLAYER
-========================= */
-
-let player = {
+let player={
 
 x:200,
-y:300,
+y:200,
 
 vx:0,
 vy:0,
 
-width:70,
-height:70,
+dir:1,
 
 ground:false,
 
-direction:1,
+frame:0
 
-walkFrame:0,
+}
 
-hoverTimer:0
+let gravity=0.8
+let friction=0.9
 
-};
-
-
-
-let gravity = 0.7;
-let friction = 0.90;
-
-let cameraX = 0;
+let cameraX=0
 
 
+/* ---------- STATS ---------- */
 
-/* =========================
-INPUT
-========================= */
+const stats={
 
-const keys = {};
+villigear:{speed:0.6,jump:16},
+sonic:{speed:1.1,jump:14},
+mario:{speed:0.6,jump:20},
+bill:{speed:0.6,jump:16,hover:true}
+
+}
+
+
+/* ---------- INPUT ---------- */
+
+const keys={}
 
 document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()] = true;
-});
+
+keys[e.key.toLowerCase()]=true
+
+})
 
 document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()] = false;
-});
+
+keys[e.key.toLowerCase()]=false
+
+})
 
 
+/* ---------- SPRITES ---------- */
 
-/* =========================
-UPDATE
-========================= */
+let sprites={}
+
+function loadSprites(){
+
+sprites={
+
+idle:load(character+"idle.png"),
+walk1:load(character+"walk1.png"),
+walk2:load(character+"walk2.png"),
+jump:load(character+"jump.png"),
+crouch:load(character+"crouch.png")
+
+}
+
+}
+
+
+/* ---------- MENU ---------- */
+
+function startSelect(){
+
+document.getElementById("menu").style.display="none"
+document.getElementById("select").style.display="block"
+
+}
+
+function choose(c){
+
+character=c
+
+loadSprites()
+
+document.getElementById("ui").style.display="none"
+
+state="game"
+
+}
+
+
+/* ---------- UPDATE ---------- */
 
 function update(){
 
-let s = stats[character];
+let s=stats[character]
 
-/* movement */
+if(keys["arrowright"]||keys["d"]){
 
-if(keys["arrowright"] || keys["d"]){
-
-player.vx += 0.5;
-player.direction = 1;
+player.vx+=s.speed
+player.dir=1
 
 }
 
-if(keys["arrowleft"] || keys["a"]){
+if(keys["arrowleft"]||keys["a"]){
 
-player.vx -= 0.5;
-player.direction = -1;
-
-}
-
-
-/* slippery */
-
-player.vx *= friction;
-
-
-/* jump */
-
-if((keys[" "] || keys["arrowup"]) && player.ground){
-
-player.vy = -s.jump;
-player.ground = false;
+player.vx-=s.speed
+player.dir=-1
 
 }
 
-/* bill hover */
+player.vx*=friction
 
-if(!player.ground && s.hover){
+if((keys[" "]||keys["arrowup"]) && player.ground){
 
-if(keys[" "] && player.hoverTimer < 180){
-
-player.vy = -2;
-player.hoverTimer++;
+player.vy=-s.jump
+player.ground=false
 
 }
 
+player.vy+=gravity
+
+player.x+=player.vx
+player.y+=player.vy
+
+
+let ground=canvas.height-120
+
+if(player.y>ground){
+
+player.y=ground
+player.vy=0
+player.ground=true
+
 }
 
-
-/* gravity */
-
-player.vy += gravity;
-
-player.x += player.vx;
-player.y += player.vy;
-
-
-/* floor collision */
-
-if(player.y > canvas.height-160){
-
-player.y = canvas.height-160;
-player.vy = 0;
-player.ground = true;
-player.hoverTimer = 0;
+cameraX=player.x-canvas.width/2
 
 }
 
 
-/* camera */
+/* ---------- SPRITE SELECT ---------- */
 
-cameraX = player.x - canvas.width/2;
+function sprite(){
+
+if(!player.ground) return sprites.jump
+
+if(Math.abs(player.vx)>1){
+
+player.frame+=0.2
+
+if(Math.floor(player.frame)%2==0) return sprites.walk1
+else return sprites.walk2
+
+}
+
+return sprites.idle
 
 }
 
 
+/* ---------- DRAW BG ---------- */
 
-/* =========================
-SPRITE SELECT
-========================= */
+function drawBG(){
 
-function currentSprite(){
+if(!bg.complete) return
 
-if(!player.ground) return sprites.jump;
+let w=bg.width
 
-if(keys["arrowdown"] || keys["s"]) return sprites.crouch;
+let start=-cameraX%w
 
-if(Math.abs(player.vx) > 1){
+for(let i=-2;i<5;i++){
 
-player.walkFrame += 0.2;
-
-if(Math.floor(player.walkFrame)%2==0)
-return sprites.walk1;
-
-return sprites.walk2;
-
-}
-
-return sprites.idle;
-
-}
-
-
-
-/* =========================
-DRAW BACKGROUND
-========================= */
-
-function drawBackground(){
-
-if(!background.complete) return;
-
-let width = background.width;
-
-let start = -cameraX % width;
-
-for(let i=-1;i<3;i++){
-
-ctx.drawImage(
-background,
-start + i*width,
-0,
-width,
-canvas.height
-);
+ctx.drawImage(bg,start+i*w,0,w,canvas.height)
 
 }
 
 }
 
 
-
-/* =========================
-DRAW FLOOR
-========================= */
+/* ---------- DRAW FLOOR ---------- */
 
 function drawFloor(){
 
-if(!floor.complete) return;
+let tile=floor.width||64
 
-for(let i=-10;i<50;i++){
+for(let i=-20;i<100;i++){
 
-ctx.drawImage(
-floor,
-i*floor.width - cameraX,
-canvas.height-100
-);
+let x=i*tile-cameraX
 
-}
+if(floor.complete)
+ctx.drawImage(floor,x,canvas.height-60)
 
 }
 
+}
 
 
-/* =========================
-DRAW PLAYER
-========================= */
+/* ---------- DRAW PLAYER ---------- */
 
 function drawPlayer(){
 
-let sprite = currentSprite();
+let img=sprite()
 
-if(!sprite.complete) return;
+ctx.save()
 
-ctx.save();
+ctx.translate(player.x-cameraX,player.y)
 
-ctx.translate(player.x - cameraX, player.y);
+if(player.dir==-1) ctx.scale(-1,1)
 
-if(player.direction == -1){
+if(img && img.complete){
 
-ctx.scale(-1,1);
-ctx.drawImage(sprite,-40,-60,80,80);
+ctx.drawImage(img,-40,-70,80,80)
 
 }else{
 
-ctx.drawImage(sprite,-40,-60,80,80);
+ctx.fillStyle="red"
+ctx.fillRect(-20,-40,40,40)
 
 }
 
-ctx.restore();
+ctx.restore()
 
 }
 
 
-
-/* =========================
-GAME LOOP
-========================= */
+/* ---------- LOOP ---------- */
 
 function loop(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+ctx.clearRect(0,0,canvas.width,canvas.height)
 
-update();
+drawBG()
 
-drawBackground();
-drawFloor();
-drawPlayer();
+if(state==="game"){
 
-requestAnimationFrame(loop);
+update()
+
+drawFloor()
+
+drawPlayer()
 
 }
 
-loop();
+requestAnimationFrame(loop)
+
+}
+
+loop()
 
 </script>
 
