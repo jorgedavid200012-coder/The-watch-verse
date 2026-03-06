@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 <meta charset="UTF-8">
 <title>Weirdmageddon</title>
@@ -14,7 +13,6 @@ margin:0;
 overflow:hidden;
 background:black;
 font-family:'Press Start 2P', cursive;
-color:white;
 }
 
 canvas{
@@ -61,6 +59,7 @@ justify-content:center;
 align-items:center;
 background:rgba(0,0,0,0.6);
 z-index:9;
+color:white;
 }
 
 </style>
@@ -68,165 +67,155 @@ z-index:9;
 
 <body>
 
-<canvas id="bgCanvas"></canvas>
 <canvas id="gameCanvas"></canvas>
 
 <div id="titleOverlay">
-
 <div id="gameTitle">WEIRDMAGEDDON</div>
 <button id="startButton">START</button>
-
 </div>
 
 <div id="charChooser">
 <h2>Select Character</h2>
-
 <div id="villagerSelect" style="cursor:pointer">
 <img src="idle.png" width="80">
 <p>Villager</p>
 </div>
-
 </div>
 
 <script>
 
 /* CANVAS */
 
-const bgCanvas = document.getElementById("bgCanvas")
-const bgCtx = bgCanvas.getContext("2d")
-
-const gameCanvas = document.getElementById("gameCanvas")
-const ctx = gameCanvas.getContext("2d")
+const canvas = document.getElementById("gameCanvas")
+const ctx = canvas.getContext("2d")
 
 function resize(){
-bgCanvas.width = window.innerWidth
-bgCanvas.height = window.innerHeight
-gameCanvas.width = window.innerWidth
-gameCanvas.height = window.innerHeight
+canvas.width = window.innerWidth
+canvas.height = window.innerHeight
 }
-
 window.addEventListener("resize",resize)
 resize()
 
 /* IMAGES */
 
 const bg = new Image()
-bg.src = "8bitbg.png"
+bg.src="8bitbg.png"
 
 const floorImg = new Image()
-floorImg.src = "floor.png"
+floorImg.src="floor.png"
 
 const idle = new Image()
-idle.src = "idle.png"
-
-const jump = new Image()
-jump.src = "jump.png"
-
-const crouch = new Image()
-crouch.src = "crouch.png"
+idle.src="idle.png"
 
 const walk1 = new Image()
-walk1.src = "walk1.png"
+walk1.src="walk1.png"
 
 const walk2 = new Image()
-walk2.src = "walk2.png"
+walk2.src="walk2.png"
 
-/* BACKGROUND */
+const jump = new Image()
+jump.src="jump.png"
 
-let bgX = 0
+const crouch = new Image()
+crouch.src="crouch.png"
 
-function drawBackground(){
+/* WORLD */
 
-bgX -= 0.3
+const WORLD_WIDTH = 5000
 
-if(bgX <= -bgCanvas.width){
-bgX = 0
-}
-
-bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height)
-
-bgCtx.drawImage(bg,bgX,0,bgCanvas.width,bgCanvas.height)
-bgCtx.drawImage(bg,bgX+bgCanvas.width,0,bgCanvas.width,bgCanvas.height)
-
-}
+let cameraX = 0
 
 /* PLAYER */
 
-let player = {
-
+let player={
 x:200,
-y:200,
+y:0,
 width:64,
 height:64,
 vx:0,
 vy:0,
 ground:false,
 frame:0,
-animTimer:0
-
+animTimer:0,
+facing:"right"
 }
 
 const gravity = 0.8
-const floorY = window.innerHeight - 100
+const floorY = canvas.height - 80
 
 /* INPUT */
 
-let keys = {}
+let keys={}
 
 document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()] = true
+keys[e.key.toLowerCase()]=true
 })
 
 document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()] = false
+keys[e.key.toLowerCase()]=false
 })
 
 /* UPDATE PLAYER */
 
 function updatePlayer(){
 
-player.vx = 0
+player.vx=0
 
 if(keys["a"] || keys["arrowleft"]){
-player.vx = -5
+player.vx=-5
+player.facing="left"
 }
 
 if(keys["d"] || keys["arrowright"]){
-player.vx = 5
+player.vx=5
+player.facing="right"
 }
 
-if((keys["w"] || keys[" "] || keys["arrowup"]) && player.ground){
-
-player.vy = -15
-player.ground = false
-
+if((keys["w"]||keys[" "]||keys["arrowup"]) && player.ground){
+player.vy=-15
+player.ground=false
 }
 
-player.x += player.vx
+player.x+=player.vx
 
-player.vy += gravity
-player.y += player.vy
+player.vy+=gravity
+player.y+=player.vy
 
-if(player.y + player.height > floorY){
-
-player.y = floorY - player.height
-player.vy = 0
-player.ground = true
-
+if(player.y+player.height>floorY){
+player.y=floorY-player.height
+player.vy=0
+player.ground=true
 }
 
 /* WALK ANIMATION */
 
-if(player.vx !== 0 && player.ground){
-
+if(player.vx!==0 && player.ground){
 player.animTimer++
+if(player.animTimer>10){
+player.frame=(player.frame+1)%2
+player.animTimer=0
+}
+}
 
-if(player.animTimer > 10){
+/* CAMERA FOLLOW */
 
-player.frame = (player.frame+1)%2
-player.animTimer = 0
+cameraX = player.x - canvas.width/2
+
+if(cameraX<0) cameraX=0
+if(cameraX>WORLD_WIDTH-canvas.width)
+cameraX=WORLD_WIDTH-canvas.width
 
 }
+
+/* BACKGROUND */
+
+function drawBackground(){
+
+let bgWidth=bg.width
+
+for(let x=-cameraX*0.3; x<canvas.width; x+=bgWidth){
+
+ctx.drawImage(bg,x,0,bgWidth,canvas.height)
 
 }
 
@@ -236,39 +225,63 @@ player.animTimer = 0
 
 function drawFloor(){
 
-for(let i=0;i<gameCanvas.width;i+=64){
+for(let x=0;x<WORLD_WIDTH;x+=64){
 
-ctx.drawImage(floorImg,i,floorY,64,64)
+ctx.drawImage(
+floorImg,
+x-cameraX,
+floorY,
+64,
+64
+)
 
 }
 
 }
 
-/* DRAW PLAYER */
+/* PLAYER */
 
 function drawPlayer(){
 
-let sprite = idle
+let sprite=idle
 
-if(keys["s"] || keys["arrowdown"]){
-
-sprite = crouch
-
+if(keys["s"]||keys["arrowdown"]){
+sprite=crouch
 }
-
 else if(!player.ground){
+sprite=jump
+}
+else if(player.vx!==0){
+sprite=player.frame===0?walk1:walk2
+}
 
-sprite = jump
+ctx.save()
+
+if(player.facing==="left"){
+
+ctx.scale(-1,1)
+
+ctx.drawImage(
+sprite,
+-(player.x-cameraX)-player.width,
+player.y,
+player.width,
+player.height
+)
+
+}else{
+
+ctx.drawImage(
+sprite,
+player.x-cameraX,
+player.y,
+player.width,
+player.height
+)
 
 }
 
-else if(player.vx !== 0){
-
-sprite = player.frame === 0 ? walk1 : walk2
-
-}
-
-ctx.drawImage(sprite,player.x,player.y,player.width,player.height)
+ctx.restore()
 
 }
 
@@ -276,23 +289,25 @@ ctx.drawImage(sprite,player.x,player.y,player.width,player.height)
 
 function gameLoop(){
 
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
 drawBackground()
 
-ctx.clearRect(0,0,gameCanvas.width,gameCanvas.height)
+updatePlayer()
 
 drawFloor()
 
-updatePlayer()
 drawPlayer()
 
 requestAnimationFrame(gameLoop)
 
 }
 
-/* MENU LOOP */
+/* MENU */
 
 function menuLoop(){
 
+ctx.clearRect(0,0,canvas.width,canvas.height)
 drawBackground()
 requestAnimationFrame(menuLoop)
 
@@ -300,26 +315,20 @@ requestAnimationFrame(menuLoop)
 
 menuLoop()
 
-/* START */
+/* UI */
 
-const startButton = document.getElementById("startButton")
-const titleOverlay = document.getElementById("titleOverlay")
-const charChooser = document.getElementById("charChooser")
+const startButton=document.getElementById("startButton")
+const titleOverlay=document.getElementById("titleOverlay")
+const charChooser=document.getElementById("charChooser")
 
-startButton.onclick = ()=>{
-
-titleOverlay.style.display = "none"
-charChooser.style.display = "flex"
-
+startButton.onclick=()=>{
+titleOverlay.style.display="none"
+charChooser.style.display="flex"
 }
 
-/* CHARACTER */
-
-document.getElementById("villagerSelect").onclick = ()=>{
-
-charChooser.style.display = "none"
+document.getElementById("villagerSelect").onclick=()=>{
+charChooser.style.display="none"
 gameLoop()
-
 }
 
 </script>
