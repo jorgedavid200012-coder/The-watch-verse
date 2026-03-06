@@ -2,15 +2,15 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Game</title>
+<title>Weirdmageddon Game</title>
 
 <style>
-
 body{
 margin:0;
 overflow:hidden;
 background:black;
 font-family:monospace;
+color:white;
 }
 
 canvas{
@@ -27,24 +27,22 @@ display:flex;
 flex-direction:column;
 justify-content:center;
 align-items:center;
-color:white;
 background:black;
 }
 
 button{
-font-size:20px;
+font-size:22px;
 padding:10px 20px;
 margin:10px;
 cursor:pointer;
 }
-
 </style>
 </head>
 
 <body>
 
 <div id="menu">
-<h1>Character Select</h1>
+<h1>Choose Character</h1>
 
 <button onclick="startGame('villigear')">Villigear</button>
 <button onclick="startGame('sonic')">Sonic</button>
@@ -57,27 +55,31 @@ cursor:pointer;
 
 <script>
 
-const canvas=document.getElementById("game")
-const ctx=canvas.getContext("2d")
+const canvas = document.getElementById("game")
+const ctx = canvas.getContext("2d")
 
-canvas.width=window.innerWidth
-canvas.height=window.innerHeight
+canvas.width = window.innerWidth
+canvas.height = window.innerHeight
 
-let cameraX=0
+const SPRITE_WIDTH = 80
+const SPRITE_HEIGHT = 80
+const FLOOR_TILE = 64
 
-const gravity=0.8
-const friction=0.85
+let cameraX = 0
+let character = "villigear"
 
-let character="villigear"
+const gravity = 0.8
+const friction = 0.85
 
-const stats={
+const stats = {
 villigear:{speed:4,jump:15},
 sonic:{speed:7,jump:14},
 mario:{speed:4,jump:19},
 bill:{speed:4,jump:15,hover:180}
 }
 
-const spriteFiles={
+const spriteFiles = {
+
 villigear:{
 idle:"idle.png",
 walk1:"walk1.png",
@@ -109,32 +111,27 @@ walk2:"billwalk2.png",
 jump:"billjump.png",
 crouch:"billcrouch.png"
 }
-}
-
-const sprites={}
-
-for(let c in spriteFiles){
-
-sprites[c]={}
-
-for(let s in spriteFiles[c]){
-
-let img=new Image()
-img.src=spriteFiles[c][s]
-
-sprites[c][s]=img
 
 }
 
+const sprites = {}
+
+for (let c in spriteFiles){
+sprites[c] = {}
+for (let s in spriteFiles[c]){
+let img = new Image()
+img.src = spriteFiles[c][s]
+sprites[c][s] = img
+}
 }
 
-const bg=new Image()
-bg.src="background.png"
+const bg = new Image()
+bg.src = "background.png"
 
-const floorImg=new Image()
-floorImg.src="floor.png"
+const floorImg = new Image()
+floorImg.src = "floor.png"
 
-const player={
+const player = {
 
 x:200,
 y:0,
@@ -143,34 +140,36 @@ vx:0,
 vy:0,
 
 dir:1,
-
 onGround:false,
 crouch:false,
 
 frame:0,
-
 hover:0
 
 }
 
-const keys={}
+const keys = {}
 
 document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()]=true
+keys[e.key.toLowerCase()] = true
 })
 
 document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()]=false
+keys[e.key.toLowerCase()] = false
 })
 
 function startGame(c){
 
-character=c
+character = c
 
-document.getElementById("menu").style.display="none"
+document.getElementById("menu").style.display = "none"
 
-player.y=canvas.height-100
-player.hover=stats[c].hover||0
+player.x = 200
+player.y = canvas.height - FLOOR_TILE - SPRITE_HEIGHT
+player.vx = 0
+player.vy = 0
+
+player.hover = stats[c].hover || 0
 
 loop()
 
@@ -178,17 +177,17 @@ loop()
 
 function getSprite(){
 
-const set=sprites[character]
+const set = sprites[character]
 
 if(player.crouch) return set.crouch
 
 if(!player.onGround) return set.jump
 
-if(Math.abs(player.vx)>1){
+if(Math.abs(player.vx) > 1){
 
-player.frame+=0.2
+player.frame += 0.2
 
-if(Math.floor(player.frame)%2==0)
+if(Math.floor(player.frame)%2 === 0)
 return set.walk1
 else
 return set.walk2
@@ -201,84 +200,81 @@ return set.idle
 
 function update(){
 
-let speed=stats[character].speed
+let speed = stats[character].speed
 
-if(keys["a"]||keys["arrowleft"]){
-
-player.vx-=0.5
-player.dir=-1
-
+if(keys["a"] || keys["arrowleft"]){
+player.vx -= 0.5
+player.dir = -1
 }
 
-if(keys["d"]||keys["arrowright"]){
-
-player.vx+=0.5
-player.dir=1
-
+if(keys["d"] || keys["arrowright"]){
+player.vx += 0.5
+player.dir = 1
 }
 
-if(keys["s"]||keys["arrowdown"]){
-
-player.crouch=true
+if(keys["s"] || keys["arrowdown"]){
+player.crouch = true
 }else{
-player.crouch=false
+player.crouch = false
 }
 
-if((keys[" "]||keys["w"]||keys["arrowup"])){
+if(keys[" "] || keys["w"] || keys["arrowup"]){
 
 if(player.onGround){
-
-player.vy=-stats[character].jump
-player.onGround=false
-
-}else if(character==="bill" && player.hover>0){
-
-player.vy=-2
-player.hover--
-
+player.vy = -stats[character].jump
+player.onGround = false
+}
+else if(character === "bill" && player.hover > 0){
+player.vy = -2
+player.hover --
 }
 
 }
 
-player.vy+=gravity
+player.vy += gravity
 
-player.x+=player.vx
-player.y+=player.vy
+player.x += player.vx
+player.y += player.vy
 
-player.vx*=friction
+player.vx *= friction
 
-let ground=canvas.height-80
+const groundY = canvas.height - FLOOR_TILE
 
-if(player.y>ground){
+if(player.y > groundY - SPRITE_HEIGHT){
 
-player.y=ground
-player.vy=0
-player.onGround=true
+player.y = groundY - SPRITE_HEIGHT
+player.vy = 0
+player.onGround = true
 
-if(character==="bill")
-player.hover=stats.bill.hover
+if(character === "bill"){
+player.hover = stats.bill.hover
+}
 
 }
 
-cameraX=player.x-canvas.width/2
+cameraX = player.x - canvas.width/2
 
 }
 
 function drawBackground(){
 
 if(bg.complete){
-
 ctx.drawImage(bg,-cameraX*0.5,0,canvas.width*2,canvas.height)
-
 }
 
 }
 
 function drawFloor(){
 
-for(let x=-2000;x<20000;x+=64){
+for(let x=-2000; x<20000; x+=FLOOR_TILE){
 
-ctx.drawImage(floorImg,x-cameraX,canvas.height-64,64,64)
+ctx.drawImage(
+floorImg,
+x-cameraX,
+canvas.height-FLOOR_TILE,
+FLOOR_TILE,
+FLOOR_TILE
+)
 
 }
 
@@ -286,20 +282,23 @@ ctx.drawImage(floorImg,x-cameraX,canvas.height-64,64,64)
 
 function drawPlayer(){
 
-const img=getSprite()
+const img = getSprite()
 
 ctx.save()
 
-ctx.translate(player.x-cameraX,player.y)
+ctx.translate(player.x-cameraX, player.y)
 
-if(player.dir==-1){
+if(player.dir === -1){
 ctx.scale(-1,1)
 }
 
-const w=80
-const h=80
-
-ctx.drawImage(img,-w/2,-h,w,h)
+ctx.drawImage(
+img,
+-SPRITE_WIDTH/2,
+0,
+SPRITE_WIDTH,
+SPRITE_HEIGHT
+)
 
 ctx.restore()
 
