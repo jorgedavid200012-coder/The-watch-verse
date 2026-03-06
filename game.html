@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
 
+<head>
+
+<meta charset="UTF-8">
 <title>Watch Verse</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -32,18 +33,19 @@ display:flex;
 align-items:center;
 justify-content:center;
 flex-direction:column;
-z-index:2;
+z-index:10;
 }
 
 button{
 
 font-family:'Press Start 2P';
-padding:20px;
+padding:18px;
 margin:10px;
-font-size:14px;
+font-size:12px;
 
 background:black;
 color:white;
+
 border:3px solid white;
 
 cursor:pointer;
@@ -51,12 +53,15 @@ cursor:pointer;
 }
 
 button:hover{
+
 background:white;
 color:black;
+
 }
 
 </style>
 </head>
+
 
 <body>
 
@@ -66,7 +71,7 @@ color:black;
 
 <div id="menu">
 
-<button onclick="startSelect()">START</button>
+<button onclick="openSelect()">START</button>
 
 </div>
 
@@ -74,61 +79,67 @@ color:black;
 
 <h2>Choose Character</h2>
 
-<button onclick="choose('villigear')">VILLIGEAR</button>
-<button onclick="choose('sonic')">SONIC</button>
-<button onclick="choose('mario')">MARIO</button>
+<button onclick="chooseCharacter('villigear')">VILLIGEAR</button>
+<button onclick="chooseCharacter('sonic')">SONIC</button>
+<button onclick="chooseCharacter('mario')">MARIO</button>
 
 </div>
 
 </div>
+
 
 <canvas id="game"></canvas>
 
+
 <script>
 
-/* ---------- CANVAS ---------- */
+/* CANVAS */
 
-const canvas=document.getElementById("game")
-const ctx=canvas.getContext("2d")
+const canvas = document.getElementById("game")
+const ctx = canvas.getContext("2d")
 
 function resize(){
 
-canvas.width=window.innerWidth
-canvas.height=window.innerHeight
+canvas.width = window.innerWidth
+canvas.height = window.innerHeight
 
 }
 
 resize()
+
 window.addEventListener("resize",resize)
 
 
-/* ---------- GAME STATE ---------- */
 
-let state="menu"
+/* GAME STATE */
 
-
-/* ---------- CHARACTER ---------- */
-
-let character="villigear"
+let state = "menu"
 
 
-/* ---------- LOAD IMAGE ---------- */
 
-function load(src){
+/* BACKGROUND */
 
-let img=new Image()
-img.src=src
-return img
+const bg = new Image()
+bg.src = "8bitbg.png"
 
-}
-
-const bg=load("8bitbg.png")
-const floor=load("floor.png")
+let bgOffset = 0
 
 
-/* ---------- PLAYER ---------- */
 
-let player={
+/* FLOOR */
+
+const floor = new Image()
+floor.src = "floor.png"
+
+
+
+/* PLAYER */
+
+let character = null
+
+let sprites = {}
+
+let player = {
 
 x:200,
 y:200,
@@ -144,144 +155,194 @@ frame:0
 
 }
 
-let gravity=0.8
-let friction=0.9
-
-let cameraX=0
+let cameraX = 0
 
 
-/* ---------- STATS ---------- */
 
-const stats={
+/* CHARACTER STATS */
+
+const stats = {
 
 villigear:{speed:0.6,jump:16},
-sonic:{speed:1.1,jump:14},
+sonic:{speed:1.2,jump:14},
 mario:{speed:0.6,jump:20},
-bill:{speed:0.6,jump:16,hover:true}
+bill:{speed:0.6,jump:16}
 
 }
 
 
-/* ---------- INPUT ---------- */
 
-const keys={}
+/* INPUT */
+
+const keys = {}
 
 document.addEventListener("keydown",e=>{
 
-keys[e.key.toLowerCase()]=true
+keys[e.key.toLowerCase()] = true
 
 })
 
 document.addEventListener("keyup",e=>{
 
-keys[e.key.toLowerCase()]=false
+keys[e.key.toLowerCase()] = false
 
 })
 
 
-/* ---------- SPRITES ---------- */
 
-let sprites={}
+/* MENU */
 
-function loadSprites(){
-
-sprites={
-
-idle:load(character+"idle.png"),
-walk1:load(character+"walk1.png"),
-walk2:load(character+"walk2.png"),
-jump:load(character+"jump.png"),
-crouch:load(character+"crouch.png")
-
-}
-
-}
-
-
-/* ---------- MENU ---------- */
-
-function startSelect(){
+function openSelect(){
 
 document.getElementById("menu").style.display="none"
 document.getElementById("select").style.display="block"
 
+state = "select"
+
 }
 
-function choose(c){
 
-character=c
+
+/* CHARACTER SELECT */
+
+function chooseCharacter(name){
+
+character = name
 
 loadSprites()
 
 document.getElementById("ui").style.display="none"
 
-state="game"
+state = "game"
 
 }
 
 
-/* ---------- UPDATE ---------- */
+
+/* LOAD SPRITES */
+
+function loadSprites(){
+
+sprites = {
+
+idle:new Image(),
+walk1:new Image(),
+walk2:new Image(),
+jump:new Image(),
+crouch:new Image()
+
+}
+
+/* Villigear has NO prefix */
+
+if(character==="villigear"){
+
+sprites.idle.src="idle.png"
+sprites.walk1.src="walk1.png"
+sprites.walk2.src="walk2.png"
+sprites.jump.src="jump.png"
+sprites.crouch.src="crouch.png"
+
+}
+
+/* Other characters */
+
+else{
+
+sprites.idle.src=character+"idle.png"
+sprites.walk1.src=character+"walk1.png"
+sprites.walk2.src=character+"walk2.png"
+sprites.jump.src=character+"jump.png"
+sprites.crouch.src=character+"crouch.png"
+
+}
+
+}
+
+
+
+/* UPDATE GAME */
 
 function update(){
 
-let s=stats[character]
+let s = stats[character]
 
-if(keys["arrowright"]||keys["d"]){
+if(keys["arrowright"] || keys["d"]){
 
-player.vx+=s.speed
-player.dir=1
-
-}
-
-if(keys["arrowleft"]||keys["a"]){
-
-player.vx-=s.speed
-player.dir=-1
+player.vx += s.speed
+player.dir = 1
 
 }
 
-player.vx*=friction
+if(keys["arrowleft"] || keys["a"]){
 
-if((keys[" "]||keys["arrowup"]) && player.ground){
-
-player.vy=-s.jump
-player.ground=false
+player.vx -= s.speed
+player.dir = -1
 
 }
 
-player.vy+=gravity
+/* slippery movement */
 
-player.x+=player.vx
-player.y+=player.vy
+player.vx *= 0.9
 
 
-let ground=canvas.height-120
+/* jump */
 
-if(player.y>ground){
+if((keys[" "] || keys["arrowup"]) && player.ground){
 
-player.y=ground
-player.vy=0
-player.ground=true
-
-}
-
-cameraX=player.x-canvas.width/2
+player.vy = -s.jump
+player.ground = false
 
 }
 
 
-/* ---------- SPRITE SELECT ---------- */
+/* gravity */
 
-function sprite(){
+player.vy += 0.8
 
-if(!player.ground) return sprites.jump
+player.x += player.vx
+player.y += player.vy
+
+
+/* ground */
+
+let ground = canvas.height-120
+
+if(player.y > ground){
+
+player.y = ground
+player.vy = 0
+player.ground = true
+
+}
+
+
+/* camera */
+
+cameraX = player.x - canvas.width/2
+
+}
+
+
+
+/* SPRITE SELECTION */
+
+function getSprite(){
+
+if(!player.ground)
+return sprites.jump
+
+if(keys["arrowdown"] || keys["s"])
+return sprites.crouch
 
 if(Math.abs(player.vx)>1){
 
-player.frame+=0.2
+player.frame += 0.2
 
-if(Math.floor(player.frame)%2==0) return sprites.walk1
-else return sprites.walk2
+if(Math.floor(player.frame)%2==0)
+return sprites.walk1
+else
+return sprites.walk2
 
 }
 
@@ -290,15 +351,32 @@ return sprites.idle
 }
 
 
-/* ---------- DRAW BG ---------- */
 
-function drawBG(){
+/* DRAW BACKGROUND */
+
+function drawBackground(){
 
 if(!bg.complete) return
 
-let w=bg.width
+let w = bg.width
 
-let start=-cameraX%w
+/* slow move in menus */
+
+if(state==="menu" || state==="select"){
+
+bgOffset += 0.2
+
+}
+
+/* follow camera in game */
+
+if(state==="game"){
+
+bgOffset = cameraX * 0.5
+
+}
+
+let start = -bgOffset % w
 
 for(let i=-2;i<5;i++){
 
@@ -309,15 +387,16 @@ ctx.drawImage(bg,start+i*w,0,w,canvas.height)
 }
 
 
-/* ---------- DRAW FLOOR ---------- */
+
+/* DRAW FLOOR */
 
 function drawFloor(){
 
-let tile=floor.width||64
+let tile = floor.width || 64
 
 for(let i=-20;i<100;i++){
 
-let x=i*tile-cameraX
+let x = i*tile - cameraX
 
 if(floor.complete)
 ctx.drawImage(floor,x,canvas.height-60)
@@ -327,23 +406,29 @@ ctx.drawImage(floor,x,canvas.height-60)
 }
 
 
-/* ---------- DRAW PLAYER ---------- */
+
+/* DRAW PLAYER */
 
 function drawPlayer(){
 
-let img=sprite()
+if(!character) return
+
+let img = getSprite()
 
 ctx.save()
 
 ctx.translate(player.x-cameraX,player.y)
 
-if(player.dir==-1) ctx.scale(-1,1)
+if(player.dir==-1)
+ctx.scale(-1,1)
 
 if(img && img.complete){
 
 ctx.drawImage(img,-40,-70,80,80)
 
-}else{
+}
+
+else{
 
 ctx.fillStyle="red"
 ctx.fillRect(-20,-40,40,40)
@@ -355,13 +440,14 @@ ctx.restore()
 }
 
 
-/* ---------- LOOP ---------- */
+
+/* GAME LOOP */
 
 function loop(){
 
 ctx.clearRect(0,0,canvas.width,canvas.height)
 
-drawBG()
+drawBackground()
 
 if(state==="game"){
 
@@ -382,4 +468,5 @@ loop()
 </script>
 
 </body>
+
 </html>
