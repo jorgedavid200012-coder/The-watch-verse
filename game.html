@@ -74,14 +74,20 @@ image-rendering:pixelated;
 /* MOBILE CONTROLS */
 
 #mobileControls{
+
 position:absolute;
 bottom:20px;
 left:0;
 width:100%;
+
 display:none;
+
 justify-content:space-between;
+
 padding:20px;
+
 z-index:20;
+
 }
 
 .ctrlGroup{
@@ -90,25 +96,18 @@ gap:15px;
 }
 
 .ctrlBtn{
+
 width:70px;
 height:70px;
-font-size:24px;
+
+font-size:22px;
+
 border:3px solid white;
+
 background:black;
 color:white;
+
 font-family:'Press Start 2P';
-}
-
-@media(max-width:900px){
-
-#mobileControls{
-display:flex;
-}
-
-button{
-font-size:14px;
-padding:22px;
-}
 
 }
 
@@ -123,7 +122,9 @@ padding:22px;
 <h1>WATCH VERSE</h1>
 
 <div id="menu">
+
 <button onclick="openSelect()">START</button>
+
 </div>
 
 <div id="select" style="display:none">
@@ -157,21 +158,29 @@ padding:22px;
 <canvas id="game"></canvas>
 
 
+
 <!-- MOBILE CONTROLS -->
 
 <div id="mobileControls">
 
 <div class="ctrlGroup">
+
 <button class="ctrlBtn" id="left">◀</button>
+
 <button class="ctrlBtn" id="right">▶</button>
+
 </div>
 
 <div class="ctrlGroup">
+
 <button class="ctrlBtn" id="jump">▲</button>
+
 <button class="ctrlBtn" id="down">▼</button>
+
 </div>
 
 </div>
+
 
 
 <script>
@@ -182,11 +191,14 @@ const canvas = document.getElementById("game")
 const ctx = canvas.getContext("2d")
 
 function resize(){
+
 canvas.width = window.innerWidth
 canvas.height = window.innerHeight
+
 }
 
 resize()
+
 window.addEventListener("resize",resize)
 
 
@@ -216,6 +228,7 @@ floor.src = "floor.png"
 /* PLAYER */
 
 let character = null
+
 let sprites = {}
 
 let player = {
@@ -265,9 +278,21 @@ keys[e.key.toLowerCase()] = false
 
 
 
-/* MOBILE INPUT */
+/* MOBILE DETECTION */
 
-function bindBtn(id,key){
+const isMobile = 'ontouchstart' in window
+
+if(isMobile){
+
+document.getElementById("mobileControls").style.display="flex"
+
+}
+
+
+
+/* MOBILE BUTTON BINDING */
+
+function bindButton(id,key){
 
 const btn = document.getElementById(id)
 
@@ -283,10 +308,14 @@ keys[key]=false
 
 }
 
-bindBtn("left","arrowleft")
-bindBtn("right","arrowright")
-bindBtn("jump"," ")
-bindBtn("down","arrowdown")
+
+
+/* CONNECT BUTTONS */
+
+bindButton("left","arrowleft")
+bindButton("right","arrowright")
+bindButton("jump"," ")
+bindButton("down","arrowdown")
 
 
 
@@ -334,6 +363,8 @@ damaged:new Image()
 
 }
 
+/* Villigear has NO prefix */
+
 if(character==="villigear"){
 
 sprites.idle.src="idle.png"
@@ -343,7 +374,11 @@ sprites.jump.src="jump.png"
 sprites.crouch.src="crouch.png"
 sprites.damaged.src="damaged.png"
 
-}else{
+}
+
+/* Other characters */
+
+else{
 
 sprites.idle.src=character+"idle.png"
 sprites.walk1.src=character+"walk1.png"
@@ -365,13 +400,17 @@ function update(){
 let s = stats[character]
 
 if(keys["arrowright"] || keys["d"]){
+
 player.vx += s.speed
 player.dir = 1
+
 }
 
 if(keys["arrowleft"] || keys["a"]){
+
 player.vx -= s.speed
 player.dir = -1
+
 }
 
 /* slippery movement */
@@ -382,8 +421,10 @@ player.vx *= 0.9
 /* jump */
 
 if((keys[" "] || keys["arrowup"]) && player.ground){
+
 player.vy = -s.jump
 player.ground = false
+
 }
 
 
@@ -395,14 +436,16 @@ player.x += player.vx
 player.y += player.vy
 
 
-/* GROUND FIX */
+/* GROUND */
 
 let ground = canvas.height - 40
 
 if(player.y > ground){
+
 player.y = ground
 player.vy = 0
 player.ground = true
+
 }
 
 
@@ -505,12 +548,16 @@ if(player.dir==-1)
 ctx.scale(-1,1)
 
 if(img && img.complete){
+
 ctx.drawImage(img,-40,-80,80,80)
+
 }
 
 else{
+
 ctx.fillStyle="red"
 ctx.fillRect(-20,-40,40,40)
+
 }
 
 ctx.restore()
@@ -528,9 +575,13 @@ ctx.clearRect(0,0,canvas.width,canvas.height)
 drawBackground()
 
 if(state==="game"){
+
 update()
+
 drawFloor()
+
 drawPlayer()
+
 }
 
 requestAnimationFrame(loop)
