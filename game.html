@@ -10,16 +10,15 @@ body{
 margin:0;
 overflow:hidden;
 background:black;
-font-family:monospace;
 }
 
 canvas{
 display:block;
-margin:auto;
-background:black;
+image-rendering:pixelated;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -28,422 +27,328 @@ background:black;
 
 <script>
 
-const canvas = document.getElementById("game")
-const ctx = canvas.getContext("2d")
+/* =========================
+CANVAS
+========================= */
 
-canvas.width = 900
-canvas.height = 500
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-
-/* ======================
-ENGINE STATE
-======================*/
-
-let GAME = "menu"
-
-
-/* ======================
-INPUT
-======================*/
-
-let keys = {}
-
-document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()] = true
-})
-
-document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()] = false
-})
+function resize(){
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize",resize);
 
 
-/* ======================
-IMAGE LOADER
-======================*/
+
+/* =========================
+CHARACTER SELECTION
+========================= */
+
+let character = localStorage.getItem("character") || "villigear";
+
+
+
+/* =========================
+LOAD IMAGES
+========================= */
 
 function load(src){
-
-let i = new Image()
-i.src = src
-return i
-
-}
-
-
-/* ======================
-BACKGROUND
-======================*/
-
-const bg = load("8bitbg.png")
-let bgScroll = 0
-
-function drawBackground(){
-
-bgScroll += 0.2
-
-let w = bg.width
-
-for(let i=-1;i<canvas.width/w+2;i++){
-
-ctx.drawImage(bg,i*w-bgScroll%w,0,w,canvas.height)
-
-}
-
-}
-
-
-/* ======================
-SPRITES
-======================*/
-
-function spriteSet(name){
-
-return{
-
-idle:load(name+"idle.png"),
-walk1:load(name+"walk1.png"),
-walk2:load(name+"walk2.png"),
-jump:load(name+"jump.png"),
-crouch:load(name+"crouch.png")
-
-}
-
+let img = new Image();
+img.src = src;
+return img;
 }
 
 const sprites = {
 
-player:spriteSet("player"),
-sonic:spriteSet("sonic"),
-mario:spriteSet("mario"),
-bill:spriteSet("bill")
+idle: load(character+"idle.png"),
+walk1: load(character+"walk1.png"),
+walk2: load(character+"walk2.png"),
+jump: load(character+"jump.png"),
+crouch: load(character+"crouch.png")
 
-}
+};
+
+const background = load("8bitbg.png");
+const floor = load("floor.png");
 
 
-/* ======================
+
+/* =========================
 CHARACTER STATS
-======================*/
+========================= */
 
-const chars = {
+const stats = {
 
-player:{speed:0.6,jump:12},
-sonic:{speed:0.9,jump:12},
-mario:{speed:0.6,jump:16},
-bill:{speed:0.6,jump:11,hover:true}
+villigear:{speed:4,jump:16},
+sonic:{speed:7,jump:14},
+mario:{speed:4,jump:20},
+bill:{speed:4,jump:16,hover:true}
 
-}
-
-let unlockedBill = false
-let currentCharacter = "player"
+};
 
 
-/* ======================
+
+/* =========================
 PLAYER
-======================*/
+========================= */
 
 let player = {
 
-x:100,
+x:200,
 y:300,
+
 vx:0,
 vy:0,
 
-w:60,
-h:60,
+width:70,
+height:70,
 
 ground:false,
-facing:1,
+
+direction:1,
+
+walkFrame:0,
 
 hoverTimer:0
 
-}
+};
 
 
-/* ======================
-PHYSICS
-======================*/
 
-const gravity = 0.6
-const friction = 0.85
-const maxSpeed = 7
-const floorY = 400
+let gravity = 0.7;
+let friction = 0.90;
+
+let cameraX = 0;
 
 
-/* ======================
-WORLD
-======================*/
 
-const floorImg = load("floor.png")
-const goal = load("goal.png")
+/* =========================
+INPUT
+========================= */
 
-let goalX = 4500
+const keys = {};
 
-let cameraX = 0
+document.addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()] = true;
+});
 
-
-/* ======================
-MENU
-======================*/
-
-function drawMenu(){
-
-drawBackground()
-
-ctx.fillStyle="white"
-ctx.font="50px monospace"
-ctx.fillText("WATCH VERSE",300,200)
-
-ctx.font="20px monospace"
-ctx.fillText("Press ENTER",380,260)
-
-if(keys["enter"]) GAME="select"
-
-}
+document.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()] = false;
+});
 
 
-/* ======================
-CHARACTER SELECT
-======================*/
 
-function drawSelect(){
+/* =========================
+UPDATE
+========================= */
 
-drawBackground()
+function update(){
 
-ctx.fillStyle="white"
-ctx.font="40px monospace"
-ctx.fillText("Choose Character",300,150)
-
-ctx.font="20px monospace"
-
-ctx.fillText("1 Player",380,220)
-ctx.fillText("2 Sonic (fast)",380,250)
-ctx.fillText("3 Mario (high jump)",380,280)
-
-if(unlockedBill)
-ctx.fillText("4 Bill Cipher (hover)",380,310)
-
-if(keys["1"]){currentCharacter="player";GAME="game"}
-if(keys["2"]){currentCharacter="sonic";GAME="game"}
-if(keys["3"]){currentCharacter="mario";GAME="game"}
-if(keys["4"] && unlockedBill){currentCharacter="bill";GAME="game"}
-
-}
-
-
-/* ======================
-PLAYER UPDATE
-======================*/
-
-function updatePlayer(){
-
-let c = chars[currentCharacter]
+let s = stats[character];
 
 /* movement */
 
-if(keys["a"]||keys["arrowleft"]){
+if(keys["arrowright"] || keys["d"]){
 
-player.vx -= c.speed
-player.facing = -1
-
-}
-
-if(keys["d"]||keys["arrowright"]){
-
-player.vx += c.speed
-player.facing = 1
+player.vx += 0.5;
+player.direction = 1;
 
 }
 
-player.vx *= friction
+if(keys["arrowleft"] || keys["a"]){
 
-player.vx = Math.max(-maxSpeed,Math.min(maxSpeed,player.vx))
+player.vx -= 0.5;
+player.direction = -1;
+
+}
+
+
+/* slippery */
+
+player.vx *= friction;
 
 
 /* jump */
 
-if((keys[" "]||keys["w"]||keys["arrowup"]) && player.ground){
+if((keys[" "] || keys["arrowup"]) && player.ground){
 
-player.vy = -c.jump
-player.ground=false
+player.vy = -s.jump;
+player.ground = false;
 
 }
-
-
-/* crouch */
-
-let crouching = keys["arrowdown"]||keys["s"]
-
 
 /* bill hover */
 
-if(c.hover){
+if(!player.ground && s.hover){
 
-if(!player.ground && (keys[" "]||keys["w"])){
+if(keys[" "] && player.hoverTimer < 180){
 
-if(player.hoverTimer < 180){
-
-player.vy *= 0.6
-player.hoverTimer++
-
-}
-
-}else{
-
-player.hoverTimer=0
+player.vy = -2;
+player.hoverTimer++;
 
 }
 
 }
 
 
-/* physics */
+/* gravity */
 
-player.vy += gravity
+player.vy += gravity;
 
-player.x += player.vx
-player.y += player.vy
+player.x += player.vx;
+player.y += player.vy;
 
 
-if(player.y+player.h>=floorY){
+/* floor collision */
 
-player.y=floorY-player.h
-player.vy=0
-player.ground=true
+if(player.y > canvas.height-160){
+
+player.y = canvas.height-160;
+player.vy = 0;
+player.ground = true;
+player.hoverTimer = 0;
 
 }
 
 
 /* camera */
 
-cameraX = player.x-200
+cameraX = player.x - canvas.width/2;
 
 }
 
 
-/* ======================
-ANIMATION
-======================*/
 
-let walkFrame=0
-let walkTimer=0
+/* =========================
+SPRITE SELECT
+========================= */
 
-function getSprite(){
+function currentSprite(){
 
-let s = sprites[currentCharacter]
+if(!player.ground) return sprites.jump;
 
-let crouch = keys["arrowdown"]||keys["s"]
+if(keys["arrowdown"] || keys["s"]) return sprites.crouch;
 
-if(crouch) return s.crouch
+if(Math.abs(player.vx) > 1){
 
-if(!player.ground) return s.jump
+player.walkFrame += 0.2;
 
-if(Math.abs(player.vx)>1){
+if(Math.floor(player.walkFrame)%2==0)
+return sprites.walk1;
 
-walkTimer++
-
-if(walkTimer>10){
-
-walkFrame = 1-walkFrame
-walkTimer=0
+return sprites.walk2;
 
 }
 
-return walkFrame? s.walk1 : s.walk2
-
-}
-
-return s.idle
+return sprites.idle;
 
 }
 
 
-/* ======================
+
+/* =========================
+DRAW BACKGROUND
+========================= */
+
+function drawBackground(){
+
+if(!background.complete) return;
+
+let width = background.width;
+
+let start = -cameraX % width;
+
+for(let i=-1;i<3;i++){
+
+ctx.drawImage(
+background,
+start + i*width,
+0,
+width,
+canvas.height
+);
+
+}
+
+}
+
+
+
+/* =========================
+DRAW FLOOR
+========================= */
+
+function drawFloor(){
+
+if(!floor.complete) return;
+
+for(let i=-10;i<50;i++){
+
+ctx.drawImage(
+floor,
+i*floor.width - cameraX,
+canvas.height-100
+);
+
+}
+
+}
+
+
+
+/* =========================
 DRAW PLAYER
-======================*/
+========================= */
 
 function drawPlayer(){
 
-let img = getSprite()
+let sprite = currentSprite();
 
-ctx.save()
+if(!sprite.complete) return;
 
-ctx.translate(player.x-cameraX+player.w/2,player.y+player.h/2)
-ctx.scale(player.facing,1)
+ctx.save();
 
-ctx.drawImage(img,-30,-30,60,60)
+ctx.translate(player.x - cameraX, player.y);
 
-ctx.restore()
+if(player.direction == -1){
+
+ctx.scale(-1,1);
+ctx.drawImage(sprite,-40,-60,80,80);
+
+}else{
+
+ctx.drawImage(sprite,-40,-60,80,80);
+
+}
+
+ctx.restore();
 
 }
 
 
-/* ======================
-DRAW WORLD
-======================*/
 
-function drawWorld(){
-
-drawBackground()
-
-for(let i=-5;i<50;i++){
-
-ctx.drawImage(floorImg,i*300-cameraX,floorY,300,100)
-
-}
-
-ctx.drawImage(goal,goalX-cameraX,340,80,80)
-
-}
-
-
-/* ======================
-WIN
-======================*/
-
-function checkWin(){
-
-if(player.x > goalX){
-
-unlockedBill = true
-GAME="select"
-
-player.x=100
-player.y=300
-
-}
-
-}
-
-
-/* ======================
+/* =========================
 GAME LOOP
-======================*/
+========================= */
 
-function game(){
+function loop(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height)
+ctx.clearRect(0,0,canvas.width,canvas.height);
 
-if(GAME==="menu") drawMenu()
+update();
 
-if(GAME==="select") drawSelect()
+drawBackground();
+drawFloor();
+drawPlayer();
 
-if(GAME==="game"){
-
-updatePlayer()
-
-drawWorld()
-
-drawPlayer()
-
-checkWin()
+requestAnimationFrame(loop);
 
 }
 
-requestAnimationFrame(game)
-
-}
-
-game()
+loop();
 
 </script>
 
