@@ -416,7 +416,7 @@ player.y+=player.vy
 let ground
 
 if(window.innerWidth <= 768){
-ground=canvas.height-GROUND_OFFSET
+ground=canvas.height-GROUND_OFFSET-60
 }else{
 ground=canvas.height-GROUND_OFFSET-SPRITE_HEIGHT
 }
@@ -426,8 +426,6 @@ player.y=ground
 player.vy=0
 player.ground=true
 }
-
-
 
 /* CAMERA */
 
