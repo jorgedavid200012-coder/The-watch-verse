@@ -333,27 +333,19 @@ sprites.damaged.src="damaged.png"
 
 }
 
-else if(character==="sonic"){
+else{
 
-sprites.idle.src="sonicidle.png"
-sprites.walk1.src="sonicwalk1.png"
-sprites.walk2.src="sonicwalk2.png"
-sprites.jump.src="sonicjump.png"
-sprites.crouch.src="soniccrouch.png"
-sprites.damaged.src="sonicdamaged.png"
-sprites.run.src="sonicrun.png"
+sprites.idle.src=character+"idle.png"
+sprites.walk1.src=character+"walk1.png"
+sprites.walk2.src=character+"walk2.png"
+sprites.jump.src=character+"jump.png"
+sprites.crouch.src=character+"crouch.png"
+sprites.damaged.src=character+"damaged.png"
 
 }
 
-else{
-
-sprites.idle.src="marioidle.png"
-sprites.walk1.src="mariowalk1.png"
-sprites.walk2.src="mariowalk2.png"
-sprites.jump.src="mariojump.png"
-sprites.crouch.src="mariocrouch.png"
-sprites.damaged.src="mariodamaged.png"
-
+if(character==="sonic"){
+sprites.run.src="sonicrun.png"
 }
 
 }
@@ -367,6 +359,8 @@ function update(){
 let s=stats[character]
 
 let crouching=(keys["arrowdown"]||keys["s"]) && player.ground
+
+/* MOVEMENT */
 
 if(!crouching){
 
@@ -419,7 +413,7 @@ player.y+=player.vy
 
 /* GROUND FIX */
 
-let ground=canvas.height-GROUND_OFFSET+(SPRITE_HEIGHT/2)
+let ground=canvas.height-GROUND_OFFSET-SPRITE_HEIGHT
 
 if(player.y>ground){
 player.y=ground
