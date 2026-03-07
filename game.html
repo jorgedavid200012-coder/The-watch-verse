@@ -413,7 +413,13 @@ player.y+=player.vy
 
 /* GROUND FIX */
 
-let ground=canvas.height-GROUND_OFFSET-SPRITE_HEIGHT
+let ground
+
+if(window.innerWidth <= 768){
+ground=canvas.height-GROUND_OFFSET
+}else{
+ground=canvas.height-GROUND_OFFSET-SPRITE_HEIGHT
+}
 
 if(player.y>ground){
 player.y=ground
