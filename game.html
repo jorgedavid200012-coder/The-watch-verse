@@ -15,7 +15,6 @@ margin:0;
 overflow:hidden;
 background:black;
 font-family:'Press Start 2P',cursive;
-color:white;
 touch-action:none;
 }
 
@@ -26,6 +25,8 @@ left:0;
 image-rendering:pixelated;
 }
 
+/* MENU */
+
 #ui{
 position:absolute;
 width:100%;
@@ -34,6 +35,7 @@ display:flex;
 align-items:center;
 justify-content:center;
 flex-direction:column;
+color:white;
 z-index:10;
 }
 
@@ -41,16 +43,10 @@ button{
 font-family:'Press Start 2P';
 padding:18px;
 margin:10px;
-font-size:12px;
 background:black;
 color:white;
 border:3px solid white;
 cursor:pointer;
-}
-
-button:hover{
-background:white;
-color:black;
 }
 
 #preview{
@@ -59,15 +55,12 @@ gap:40px;
 margin-top:30px;
 }
 
-.previewChar{
-text-align:center;
-}
-
 .previewChar img{
 width:80px;
 height:80px;
 image-rendering:pixelated;
 }
+
 
 /* MOBILE CONTROLS */
 
@@ -76,23 +69,33 @@ position:absolute;
 bottom:20px;
 left:0;
 right:0;
-display:none;
+display:flex;
 justify-content:space-between;
 padding:20px;
 z-index:20;
 }
 
+.mobileLeft{
+display:flex;
+gap:10px;
+}
+
+.mobileRight{
+display:flex;
+gap:10px;
+}
+
 .mobileBtn{
-width:80px;
-height:80px;
-font-size:40px;
+width:75px;
+height:75px;
 background:black;
 color:white;
 border:3px solid white;
 display:flex;
 align-items:center;
 justify-content:center;
-user-select:none;
+font-size:28px;
+image-rendering:pixelated;
 }
 
 </style>
@@ -136,6 +139,7 @@ user-select:none;
 
 </div>
 
+
 <canvas id="game"></canvas>
 
 
@@ -143,117 +147,112 @@ user-select:none;
 
 <div id="mobileControls">
 
-<div>
+<div class="mobileLeft">
 <div class="mobileBtn" id="left">◀</div>
 <div class="mobileBtn" id="right">▶</div>
 </div>
 
+<div class="mobileRight">
 <div class="mobileBtn" id="jump">▲</div>
+<div class="mobileBtn" id="crouch">▼</div>
+</div>
 
 </div>
+
 
 
 <script>
 
 /* CANVAS */
 
-const canvas = document.getElementById("game")
-const ctx = canvas.getContext("2d")
+const canvas=document.getElementById("game")
+const ctx=canvas.getContext("2d")
 
 function resize(){
-canvas.width = window.innerWidth
-canvas.height = window.innerHeight
+canvas.width=window.innerWidth
+canvas.height=window.innerHeight
 }
 
 resize()
 window.addEventListener("resize",resize)
 
 
+
 /* GAME STATE */
 
-let state = "menu"
+let state="menu"
+
 
 
 /* BACKGROUND */
 
-const bg = new Image()
-bg.src = "8bitbg.png"
-
-let bgOffset = 0
+const bg=new Image()
+bg.src="background.png"
 
 
-/* FLOOR */
 
-const floor = new Image()
-floor.src = "floor.png"
+/* GROUND POSITION (adjust to match picture ground) */
+
+const GROUND_OFFSET=120
+
 
 
 /* SPRITE SIZE */
 
-const SPRITE_WIDTH = 80
-const SPRITE_HEIGHT = 80
+const SPRITE_WIDTH=80
+const SPRITE_HEIGHT=80
+
 
 
 /* PLAYER */
 
-let character = null
+let character=null
+let sprites={}
 
-let sprites = {}
-
-let player = {
-
+let player={
 x:200,
 y:200,
-
 vx:0,
 vy:0,
-
+speed:0,
 dir:1,
-
 ground:false,
-
-frame:0,
-
-speed:0
-
+frame:0
 }
 
-let cameraX = 0
+let cameraX=0
+
 
 
 /* CHARACTER STATS */
 
-const stats = {
+const stats={
 
 villigear:{speed:0.6,jump:16,max:6},
-sonic:{speed:0.35,jump:14,max:14},
+
+sonic:{speed:0.12,jump:14,max:12},
+
 mario:{speed:0.6,jump:20,max:6}
 
 }
 
 
+
 /* INPUT */
 
-const keys = {}
+const keys={}
 
 document.addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()] = true
+keys[e.key.toLowerCase()]=true
 })
 
 document.addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()] = false
+keys[e.key.toLowerCase()]=false
 })
 
 
+
 /* MOBILE INPUT */
-
-function isMobile(){
-return /android|iphone|ipad|ipod/i.test(navigator.userAgent)
-}
-
-if(isMobile()){
-document.getElementById("mobileControls").style.display="flex"
-}
 
 function hold(btn,key){
 
@@ -272,6 +271,8 @@ keys[key]=false
 hold(document.getElementById("left"),"arrowleft")
 hold(document.getElementById("right"),"arrowright")
 hold(document.getElementById("jump")," ")
+hold(document.getElementById("crouch"),"arrowdown")
+
 
 
 /* MENU */
@@ -283,6 +284,7 @@ state="select"
 }
 
 
+
 /* CHARACTER SELECT */
 
 function chooseCharacter(name){
@@ -291,16 +293,18 @@ character=name
 loadSprites()
 
 document.getElementById("ui").style.display="none"
+
 state="game"
 
 }
+
 
 
 /* LOAD SPRITES */
 
 function loadSprites(){
 
-sprites = {
+sprites={
 
 idle:new Image(),
 walk1:new Image(),
@@ -341,58 +345,69 @@ sprites.run.src="sonicrun.png"
 }
 
 
-/* UPDATE GAME */
+
+/* UPDATE */
 
 function update(){
 
-let s = stats[character]
+let s=stats[character]
 
-if(keys["arrowright"] || keys["d"]){
+let crouching=(keys["arrowdown"]||keys["s"]) && player.ground
 
-player.speed += s.speed
-player.dir = 1
+/* MOVEMENT */
+
+if(!crouching){
+
+if(keys["arrowright"]||keys["d"]){
+
+player.speed+=s.speed
+player.dir=1
 
 }
 
-else if(keys["arrowleft"] || keys["a"]){
+else if(keys["arrowleft"]||keys["a"]){
 
-player.speed -= s.speed
-player.dir = -1
+player.speed-=s.speed
+player.dir=-1
 
 }
 
 else{
 
-player.speed *= 0.9
+player.speed*=0.9
 
 }
 
-player.speed = Math.max(-s.max,Math.min(s.max,player.speed))
+}
 
-player.vx = player.speed
+player.speed=Math.max(-s.max,Math.min(s.max,player.speed))
+player.vx=player.speed
 
 
-/* jump */
 
-if((keys[" "] || keys["arrowup"]) && player.ground){
+/* JUMP */
 
-player.vy = -s.jump
+if((keys[" "]||keys["arrowup"]) && player.ground){
+
+player.vy=-s.jump
 player.ground=false
 
 }
 
 
-/* gravity */
 
-player.vy += 0.8
+/* GRAVITY */
 
-player.x += player.vx
-player.y += player.vy
+player.vy+=0.8
+
+player.x+=player.vx
+player.y+=player.vy
 
 
-/* ground */
 
-let ground = canvas.height-40
+/* GROUND */
+
+let ground=canvas.height-GROUND_OFFSET
 
 if(player.y>ground){
 
@@ -403,34 +418,37 @@ player.ground=true
 }
 
 
-/* camera */
 
-cameraX = player.x - canvas.width/2
+/* CAMERA */
+
+cameraX=player.x-canvas.width/2
 
 }
+
 
 
 /* SPRITE SELECTION */
 
 function getSprite(){
 
+let crouching=(keys["arrowdown"]||keys["s"]) && player.ground
+
+if(crouching)
+return sprites.crouch
+
 if(!player.ground)
 return sprites.jump
 
 if(Math.abs(player.vx)>1){
 
-/* SONIC MAX SPEED */
-
-if(character==="sonic" && Math.abs(player.speed) > stats.sonic.max*0.8 && sprites.run.complete){
+if(character==="sonic" && Math.abs(player.speed)>stats.sonic.max*0.8){
 return sprites.run
 }
 
-/* walk animation */
-
 if(character==="sonic")
-player.frame +=0.3
+player.frame+=0.3
 else
-player.frame +=0.08
+player.frame+=0.1
 
 if(Math.floor(player.frame)%2==0)
 return sprites.walk1
@@ -444,23 +462,16 @@ return sprites.idle
 }
 
 
-/* BACKGROUND */
+
+/* DRAW BACKGROUND */
 
 function drawBackground(){
 
 if(!bg.complete) return
 
-let w = bg.width
+let w=bg.width
 
-if(state==="menu" || state==="select"){
-bgOffset+=0.2
-}
-
-if(state==="game"){
-bgOffset = cameraX*0.5
-}
-
-let start = -bgOffset % w
+let start=-cameraX%w
 
 for(let i=-2;i<5;i++){
 ctx.drawImage(bg,start+i*w,0,w,canvas.height)
@@ -469,31 +480,12 @@ ctx.drawImage(bg,start+i*w,0,w,canvas.height)
 }
 
 
-/* FLOOR */
 
-function drawFloor(){
-
-let tile = floor.width || 64
-
-for(let i=-20;i<100;i++){
-
-let x=i*tile-cameraX
-
-if(floor.complete)
-ctx.drawImage(floor,x,canvas.height-40)
-
-}
-
-}
-
-
-/* PLAYER */
+/* DRAW PLAYER */
 
 function drawPlayer(){
 
-if(!character) return
-
-let img = getSprite()
+let img=getSprite()
 
 ctx.save()
 
@@ -501,8 +493,6 @@ ctx.translate(player.x-cameraX,player.y)
 
 if(player.dir==-1)
 ctx.scale(-1,1)
-
-if(img && img.complete){
 
 ctx.drawImage(
 img,
@@ -512,14 +502,13 @@ SPRITE_WIDTH,
 SPRITE_HEIGHT
 )
 
-}
-
 ctx.restore()
 
 }
 
 
-/* LOOP */
+
+/* GAME LOOP */
 
 function loop(){
 
@@ -530,7 +519,6 @@ drawBackground()
 if(state==="game"){
 
 update()
-drawFloor()
 drawPlayer()
 
 }
@@ -544,5 +532,4 @@ loop()
 </script>
 
 </body>
-
 </html>
