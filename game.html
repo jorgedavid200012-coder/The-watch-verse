@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <meta charset="UTF-8">
@@ -32,27 +31,27 @@ position:absolute;
 width:100%;
 height:100%;
 display:flex;
+flex-direction:column;
 align-items:center;
 justify-content:center;
-flex-direction:column;
 color:white;
 z-index:10;
 }
 
 button{
 font-family:'Press Start 2P';
-padding:18px;
+padding:16px;
 margin:10px;
+border:3px solid white;
 background:black;
 color:white;
-border:3px solid white;
 cursor:pointer;
 }
 
 #preview{
 display:flex;
 gap:40px;
-margin-top:30px;
+margin-top:20px;
 }
 
 .previewChar img{
@@ -60,7 +59,6 @@ width:80px;
 height:80px;
 image-rendering:pixelated;
 }
-
 
 /* MOBILE CONTROLS */
 
@@ -75,32 +73,25 @@ padding:20px;
 z-index:20;
 }
 
-.mobileLeft{
-display:flex;
-gap:10px;
-}
-
-.mobileRight{
+.mobileLeft,.mobileRight{
 display:flex;
 gap:10px;
 }
 
 .mobileBtn{
-width:75px;
-height:75px;
+width:70px;
+height:70px;
+border:3px solid white;
 background:black;
 color:white;
-border:3px solid white;
 display:flex;
 align-items:center;
 justify-content:center;
-font-size:28px;
-image-rendering:pixelated;
+font-size:26px;
 }
 
 </style>
 </head>
-
 
 <body>
 
@@ -114,22 +105,25 @@ image-rendering:pixelated;
 
 <div id="select" style="display:none">
 
-<h2>Choose Character</h2>
+<h3>Choose Character</h3>
 
 <div id="preview">
 
 <div class="previewChar">
 <img src="idle.png">
+<br>
 <button onclick="chooseCharacter('villigear')">VILLIGEAR</button>
 </div>
 
 <div class="previewChar">
 <img src="sonicidle.png">
+<br>
 <button onclick="chooseCharacter('sonic')">SONIC</button>
 </div>
 
 <div class="previewChar">
 <img src="marioidle.png">
+<br>
 <button onclick="chooseCharacter('mario')">MARIO</button>
 </div>
 
@@ -160,7 +154,6 @@ image-rendering:pixelated;
 </div>
 
 
-
 <script>
 
 /* CANVAS */
@@ -172,7 +165,6 @@ function resize(){
 canvas.width=window.innerWidth
 canvas.height=window.innerHeight
 }
-
 resize()
 window.addEventListener("resize",resize)
 
@@ -191,7 +183,7 @@ bg.src="background.png"
 
 
 
-/* GROUND POSITION (adjust to match picture ground) */
+/* GROUND POSITION */
 
 const GROUND_OFFSET=120
 
@@ -199,14 +191,15 @@ const GROUND_OFFSET=120
 
 /* SPRITE SIZE */
 
-const SPRITE_WIDTH=80
-const SPRITE_HEIGHT=80
+const SPRITE_W=80
+const SPRITE_H=80
 
 
 
 /* PLAYER */
 
 let character=null
+
 let sprites={}
 
 let player={
@@ -227,13 +220,9 @@ let cameraX=0
 /* CHARACTER STATS */
 
 const stats={
-
 villigear:{speed:0.6,jump:16,max:6},
-
 sonic:{speed:0.12,jump:14,max:12},
-
 mario:{speed:0.6,jump:20,max:6}
-
 }
 
 
@@ -252,7 +241,7 @@ keys[e.key.toLowerCase()]=false
 
 
 
-/* MOBILE INPUT */
+/* MOBILE CONTROLS */
 
 function hold(btn,key){
 
@@ -300,46 +289,56 @@ state="game"
 
 
 
+/* IMAGE PRELOAD (fixes mobile loading) */
+
+function loadImage(src){
+let img=new Image()
+img.src=src
+return img
+}
+
+
+
 /* LOAD SPRITES */
 
 function loadSprites(){
 
 sprites={
 
-idle:new Image(),
-walk1:new Image(),
-walk2:new Image(),
-jump:new Image(),
-crouch:new Image(),
-damaged:new Image(),
-run:new Image()
+idle:null,
+walk1:null,
+walk2:null,
+jump:null,
+crouch:null,
+damaged:null,
+run:null
 
 }
 
 if(character==="villigear"){
 
-sprites.idle.src="idle.png"
-sprites.walk1.src="walk1.png"
-sprites.walk2.src="walk2.png"
-sprites.jump.src="jump.png"
-sprites.crouch.src="crouch.png"
-sprites.damaged.src="damaged.png"
+sprites.idle=loadImage("idle.png")
+sprites.walk1=loadImage("walk1.png")
+sprites.walk2=loadImage("walk2.png")
+sprites.jump=loadImage("jump.png")
+sprites.crouch=loadImage("crouch.png")
+sprites.damaged=loadImage("damaged.png")
 
 }
 
 else{
 
-sprites.idle.src=character+"idle.png"
-sprites.walk1.src=character+"walk1.png"
-sprites.walk2.src=character+"walk2.png"
-sprites.jump.src=character+"jump.png"
-sprites.crouch.src=character+"crouch.png"
-sprites.damaged.src=character+"damaged.png"
+sprites.idle=loadImage(character+"idle.png")
+sprites.walk1=loadImage(character+"walk1.png")
+sprites.walk2=loadImage(character+"walk2.png")
+sprites.jump=loadImage(character+"jump.png")
+sprites.crouch=loadImage(character+"crouch.png")
+sprites.damaged=loadImage(character+"damaged.png")
 
 }
 
 if(character==="sonic"){
-sprites.run.src="sonicrun.png"
+sprites.run=loadImage("sonicrun.png")
 }
 
 }
@@ -354,28 +353,22 @@ let s=stats[character]
 
 let crouching=(keys["arrowdown"]||keys["s"]) && player.ground
 
-/* MOVEMENT */
+
 
 if(!crouching){
 
 if(keys["arrowright"]||keys["d"]){
-
 player.speed+=s.speed
 player.dir=1
-
 }
 
 else if(keys["arrowleft"]||keys["a"]){
-
 player.speed-=s.speed
 player.dir=-1
-
 }
 
 else{
-
 player.speed*=0.9
-
 }
 
 }
@@ -427,17 +420,15 @@ cameraX=player.x-canvas.width/2
 
 
 
-/* SPRITE SELECTION */
+/* SPRITE SELECT */
 
 function getSprite(){
 
 let crouching=(keys["arrowdown"]||keys["s"]) && player.ground
 
-if(crouching)
-return sprites.crouch
+if(crouching) return sprites.crouch
 
-if(!player.ground)
-return sprites.jump
+if(!player.ground) return sprites.jump
 
 if(Math.abs(player.vx)>1){
 
@@ -487,6 +478,8 @@ function drawPlayer(){
 
 let img=getSprite()
 
+if(!img || !img.complete) return
+
 ctx.save()
 
 ctx.translate(player.x-cameraX,player.y)
@@ -496,10 +489,10 @@ ctx.scale(-1,1)
 
 ctx.drawImage(
 img,
--SPRITE_WIDTH/2,
--SPRITE_HEIGHT,
-SPRITE_WIDTH,
-SPRITE_HEIGHT
+-SPRITE_W/2,
+-SPRITE_H,
+SPRITE_W,
+SPRITE_H
 )
 
 ctx.restore()
@@ -508,7 +501,7 @@ ctx.restore()
 
 
 
-/* GAME LOOP */
+/* LOOP */
 
 function loop(){
 
@@ -517,10 +510,8 @@ ctx.clearRect(0,0,canvas.width,canvas.height)
 drawBackground()
 
 if(state==="game"){
-
 update()
 drawPlayer()
-
 }
 
 requestAnimationFrame(loop)
