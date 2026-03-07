@@ -69,7 +69,7 @@ position:absolute;
 bottom:20px;
 left:0;
 right:0;
-display:flex;
+display:none;
 justify-content:space-between;
 padding:20px;
 z-index:20;
@@ -167,10 +167,7 @@ image-rendering:pixelated;
 
 if("ontouchstart" in window){
 document.getElementById("mobileControls").style.display="flex"
-}else{
-document.getElementById("mobileControls").style.display="none"
 }
-
 
 /* CANVAS */
 
@@ -196,7 +193,7 @@ let state="menu"
 /* BACKGROUND */
 
 const bg=new Image()
-bg.src="background.png"
+bg.src="backround.png"
 
 
 
@@ -336,19 +333,27 @@ sprites.damaged.src="damaged.png"
 
 }
 
-else{
+else if(character==="sonic"){
 
-sprites.idle.src=character+"idle.png"
-sprites.walk1.src=character+"walk1.png"
-sprites.walk2.src=character+"walk2.png"
-sprites.jump.src=character+"jump.png"
-sprites.crouch.src=character+"crouch.png"
-sprites.damaged.src=character+"damaged.png"
+sprites.idle.src="sonicidle.png"
+sprites.walk1.src="sonicwalk1.png"
+sprites.walk2.src="sonicwalk2.png"
+sprites.jump.src="sonicjump.png"
+sprites.crouch.src="soniccrouch.png"
+sprites.damaged.src="sonicdamaged.png"
+sprites.run.src="sonicrun.png"
 
 }
 
-if(character==="sonic"){
-sprites.run.src="sonicrun.png"
+else{
+
+sprites.idle.src="marioidle.png"
+sprites.walk1.src="mariowalk1.png"
+sprites.walk2.src="mariowalk2.png"
+sprites.jump.src="mariojump.png"
+sprites.crouch.src="mariocrouch.png"
+sprites.damaged.src="mariodamaged.png"
+
 }
 
 }
@@ -362,8 +367,6 @@ function update(){
 let s=stats[character]
 
 let crouching=(keys["arrowdown"]||keys["s"]) && player.ground
-
-/* MOVEMENT */
 
 if(!crouching){
 
@@ -416,14 +419,12 @@ player.y+=player.vy
 
 /* GROUND FIX */
 
-let ground=canvas.height-GROUND_OFFSET-(SPRITE_HEIGHT/2)
+let ground=canvas.height-GROUND_OFFSET+(SPRITE_HEIGHT/2)
 
 if(player.y>ground){
-
 player.y=ground
 player.vy=0
 player.ground=true
-
 }
 
 
