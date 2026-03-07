@@ -69,7 +69,7 @@ position:absolute;
 bottom:20px;
 left:0;
 right:0;
-display:none;
+display:flex;
 justify-content:space-between;
 padding:20px;
 z-index:20;
@@ -167,7 +167,10 @@ image-rendering:pixelated;
 
 if("ontouchstart" in window){
 document.getElementById("mobileControls").style.display="flex"
+}else{
+document.getElementById("mobileControls").style.display="none"
 }
+
 
 /* CANVAS */
 
@@ -193,7 +196,7 @@ let state="menu"
 /* BACKGROUND */
 
 const bg=new Image()
-bg.src="backround.png"
+bg.src="background.png"
 
 
 
@@ -413,12 +416,14 @@ player.y+=player.vy
 
 /* GROUND FIX */
 
-let ground=canvas.height-GROUND_OFFSET
+let ground=canvas.height-GROUND_OFFSET-(SPRITE_HEIGHT/2)
 
 if(player.y>ground){
+
 player.y=ground
 player.vy=0
 player.ground=true
+
 }
 
 
