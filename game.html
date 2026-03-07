@@ -137,6 +137,20 @@ image-rendering:pixelated;
 
 </div>
 
+<!-- LEVEL SELECT -->
+
+<div id="levels" style="display:none">
+
+<h2>Select Level</h2>
+
+<button onclick="startLevel(1)">LEVEL 1</button>
+<button>LEVEL 2</button>
+<button>LEVEL 3</button>
+<button>LEVEL 4</button>
+<button>LEVEL 5</button>
+
+</div>
+
 </div>
 
 
@@ -187,6 +201,12 @@ window.addEventListener("resize",resize)
 /* GAME STATE */
 
 let state="menu"
+
+
+
+/* LEVEL SYSTEM */
+
+let currentLevel=0
 
 
 
@@ -298,7 +318,27 @@ function chooseCharacter(name){
 character=name
 loadSprites()
 
+document.getElementById("select").style.display="none"
+document.getElementById("levels").style.display="block"
+
+state="levelselect"
+
+}
+
+
+
+/* START LEVEL */
+
+function startLevel(num){
+
+currentLevel=num
+
 document.getElementById("ui").style.display="none"
+
+player.x=200
+player.y=200
+player.vx=0
+player.vy=0
 
 state="game"
 
@@ -420,6 +460,8 @@ player.y = ground
 player.vy = 0
 player.ground = true
 }
+
+
 
 /* CAMERA */
 
